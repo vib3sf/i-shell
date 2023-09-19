@@ -14,10 +14,13 @@ int main()
 		char** argv_buf = NULL;
         int argc, res = handle_command(c, &argc, &argv_buf);;
 
-		if (!res) 
+		if (res) 
 		{
+			print_parse_error(res);
+		} 
+		else
 			exec(argc, argv_buf);
-		}
+
         free_argv(argc, argv_buf);
     }
     return 0;

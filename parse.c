@@ -3,10 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void print_argv(int argc, char **argv);
-
-static void print_quotes_error();
-
 static void add_argv(int *argc, char ***argv, char *buf, int buf_size);
 
 static void free_buf(char **buf, int *pbuf_size);
@@ -95,26 +91,7 @@ static void extend_buf(char **buf, int *pbuf_size, char c)
     (*pbuf_size)++;
 }
 
-
-void print_result(int res, int argc, char **argv)
-{
-    switch(res) {
-        case 0:
-            print_argv(argc, argv);
-            break;
-        case -1:
-            print_quotes_error();
-    }
-}
-
-void print_argv(int argc, char **argv)
-{
-    for(int i = 0; i < argc; i++) {
-        printf("[%s]\n", argv[i]);
-    }
-}
-
-static void print_quotes_error()
+void print_parse_error(int res)
 {
     printf("Error: unmatched quotes.\n");
 }
