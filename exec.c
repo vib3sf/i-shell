@@ -16,6 +16,8 @@ int exec(int argc, char **argv)
 	if(p == 0) 
 	{
 		execvp(argv[0], argv);
+		perror(argv[0]);
+		exit(2);
 	}
 	
 	int status, wr;
