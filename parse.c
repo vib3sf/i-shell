@@ -3,21 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void add_argv(int *argc, char ***argv, char *buf, int buf_size);
+static void add_argv(int *argc, char ***argv, const char *buf, int buf_size);
 
 static void empty_buf(char **buf, int *pbuf_size);
 
 static void extend_buf(char **buf, int *buf_size, char c);
 
 
-int handle_command(int first_c, int *argc_out, char ***argv_buf)
+int handle_command(int first_c, char ***argv_buf)
 {
     char *buf = malloc(sizeof(char));      /* buffer for args */
 	*buf = '\0';
 
-    int c = first_c, buf_size = 1, quotes_count = 0;
+    int c = first_c, buf_size = 1, argc = 0, quotes_count = 0;
 
-	*argc_out = 0;
     while(c != '\n')
 	{
         switch(c) 
@@ -34,7 +33,7 @@ int handle_command(int first_c, int *argc_out, char ***argv_buf)
                 }
                 else if(buf) 
 				{
-                    add_argv(argc_out, argv_buf, buf, buf_size);
+                    add_argv(&argc, argv_buf, buf, buf_size);
                     empty_buf(&buf, &buf_size);
                 }
                 break;
@@ -53,18 +52,18 @@ int handle_command(int first_c, int *argc_out, char ***argv_buf)
     
     if (buf)
 	{
-        add_argv(argc_out, argv_buf, buf, buf_size);
+        add_argv(&argc, argv_buf, buf, buf_size);
 	}
 
 	free(buf);
 
-    *argv_buf = realloc(*argv_buf, (*argc_out + 1) * sizeof(char *));
-	(*argv_buf)[*argc_out] = NULL;
+    *argv_buf = realloc(*argv_buf, (argc + 1) * sizeof(char *));
+	(*argv_buf)[argc] = NULL;
 
 	return (quotes_count % 2 == 1) ? -1 : 0;
 }
 
-static void add_argv(int *pargc, char ***pargv, char *buf, int buf_size)
+static void add_argv(int *pargc, char ***pargv, const char *buf, int buf_size)
 {
     *pargv = realloc(*pargv, (*pargc + 1) * sizeof(char *));
 
@@ -83,10 +82,11 @@ static void empty_buf(char **pbuf, int *pbuf_size)
     *pbuf_size = 1;
 }
 
-void free_argv(int argc, char **argv)
+void free_argv(char **argv)
 {
-    for(int i = 0; i < argc; i++)
-        free(argv[i]);
+	int i = 0;
+    for(char **tmp = argv; *tmp; tmp++, i++)
+        free(*tmp);
     free(argv);
 }
 

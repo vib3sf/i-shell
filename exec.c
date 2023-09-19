@@ -3,21 +3,21 @@
 #include <stdio.h>
 #include <sys/wait.h>
 
-int exec(int argc, char **argv)
+int exec(char **argv)
 {
 	int p = fork();
 
 	if(p == -1) 
 	{
 		perror("fork");
-		exit(1);
+		return -1;
 	}
 
 	if(p == 0) 
 	{
 		execvp(argv[0], argv);
 		perror(argv[0]);
-		exit(2);
+		return -1;
 	}
 	
 	int status, wr;
