@@ -31,7 +31,7 @@ int handle_command(int first_c, char ***argv_buf)
 				{
                     extend_buf(&buf, &buf_size, c);
                 }
-                else if(buf) 
+                else if(*buf) 
 				{
                     add_argv(&argc, argv_buf, buf, buf_size);
                     empty_buf(&buf, &buf_size);
@@ -50,7 +50,7 @@ int handle_command(int first_c, char ***argv_buf)
         c = getchar();
     } 
     
-    if (buf)
+    if(*buf)
 	{
         add_argv(&argc, argv_buf, buf, buf_size);
 	}
