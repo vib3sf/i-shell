@@ -4,6 +4,7 @@
 
 int main()
 {
+	change_dir(NULL);	/* cd to home dir */
     for(;;) 
 	{
         printf("> ");

@@ -1,3 +1,4 @@
+#include "exec.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,7 +6,9 @@
 #include <string.h>
 #include <pwd.h>
 
-static void replace_home_dir(char **path);
+static char *expand_home_dir(char *path);
+
+static char *get_home_dir();
 
 int exec(char **argv)
 {
@@ -13,21 +16,17 @@ int exec(char **argv)
 	{
 		if (argv[2])
 		{
-			printf("Error: cd have only 1 arg");
+			printf("Error: cd have only 1 arg\n");
 			return -1;
 		}
-		else if(argv[1] == NULL || argv[1][0] == '~')
-		{
-			replace_home_dir(&argv[1]);
-		}
+		int chd = change_dir(argv[1]);
 
-		int chd = chdir(argv[1]);
-		if (chd == -1) 
-		{
+		if(chd) {
 			perror(argv[1]);
 			return -1;
 		}
 		return 0;
+
 	}
 
 	int p = fork();
@@ -52,23 +51,39 @@ int exec(char **argv)
 	
 }
 
-static void replace_home_dir(char **path)
+int change_dir(char *path)
 {
-	struct passwd *pw = getpwuid(getuid());
+	int chd;
 
-	int path_size = strlen(pw->pw_dir);
-	if(*path)
+	if(path == NULL)
 	{
-		path_size += strlen(*path) + 2;
+		chd = chdir(get_home_dir());
 	}
+	else if(path[0] == '~')
+	{
+		char *new_path = expand_home_dir(path);
+		chd = chdir(new_path);
+		free(new_path);
+	}
+	else
+		chd = chdir(path);
+
+	return chd;
+}
+
+static char *expand_home_dir(char *path)
+{
+	char *hd = get_home_dir();
+	int path_size = strlen(hd) + strlen(path) + 2;
 
 	char *path_buf = malloc(path_size * sizeof(char));
-	strcpy(path_buf, pw->pw_dir);
+	strcpy(path_buf, hd);
+	strcat(path_buf, path + 1);
 
-	if(*path)
-	{
-		strcat(path_buf, *(path) + 1);
-		free(*path);
-	}
-	*path = path_buf;
+	return path_buf;
+}
+
+static char *get_home_dir()
+{
+	return getpwuid(getuid())->pw_dir;
 }
