@@ -10,7 +10,7 @@ int main()
         printf("> ");
 
 		char** argv_buf = NULL;
-        int res = parse_command(&argv_buf);;
+        int res = parse_command(&argv_buf);
 
 		if (res) 
 		{

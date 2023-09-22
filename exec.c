@@ -6,6 +6,10 @@
 #include <string.h>
 #include <pwd.h>
 
+static int exec_args(char **argv, int start, int end);
+
+static int cr_fork(char **argv, int start, int end);
+
 static char *expand_home_dir(char *path);
 
 static char *get_home_dir();
@@ -28,27 +32,25 @@ int exec(char **argv)
 		return 0;
 
 	}
-
-	int p = fork();
-
-	if(p == -1) 
-	{
-		perror("fork");
-		return -1;
-	}
-
-	if(p == 0) 
-	{
-		execvp(argv[0], argv);
-		perror(argv[0]);
-		return -1;
-	}
 	
-	int status, wr;
-	wr = wait(&status);
+	int start = 0, cur = 0;
+	for(char **p = argv; *p; p++)
+	{
+		if(!strcmp(*p, "&&"))
+		{
+			cr_fork(argv, start, cur - 1);
+			start = cur + 1;
+		}
+		cur++;
+	}
+
+	if(start != cur){
+		cr_fork(argv, start, cur);
+		int status, wr;
+		wr = wait(&status);
+	}
 
 	return 0;
-	
 }
 
 int change_dir(char *path)
@@ -86,4 +88,37 @@ static char *expand_home_dir(char *path)
 static char *get_home_dir()
 {
 	return getpwuid(getuid())->pw_dir;
+}
+
+static int cr_fork(char **argv, int start, int end)
+{
+	int p = fork();
+
+	if(p == -1) 
+	{
+		perror("fork");
+		return -1;
+	}
+
+	if(p == 0) 
+	{
+		exec_args(argv, start, end);
+		perror(argv[0]);
+		return -1;
+	}
+	
+	return 0;
+
+}
+
+static int exec_args(char **argv, int start, int end)
+{
+	int size = end - start + 1;
+	char **cmdline = malloc(size * sizeof(char*));
+	for(int i = 0; i < size; i++) {
+		cmdline[i] = argv[start + i];
+	}
+	execvp(cmdline[0], cmdline);
+	perror(cmdline[0]);
+	_exit(1);
 }
