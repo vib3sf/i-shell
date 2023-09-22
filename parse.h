@@ -1,7 +1,22 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-int handle_command(int first_c, char ***argv_buf);
+/* Rememebers previous char type.
+ * Normal chars are letters and digits
+ * Specials are &, |, ;, ,  
+ * Quotes state is for writing strings.
+ * Space is space :)
+ */
+
+typedef enum char_state 
+{
+	normal,
+	special,
+	quotes,
+	space
+} char_state_t;
+
+int parse_command(char ***argv_buf);
 
 void print_result(int res, int argc, char **argv);
 

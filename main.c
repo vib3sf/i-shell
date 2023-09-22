@@ -8,12 +8,9 @@ int main()
     for(;;) 
 	{
         printf("> ");
-        int c = getchar();
-        if (c == EOF)
-            break;
 
 		char** argv_buf = NULL;
-        int res = handle_command(c, &argv_buf);;
+        int res = parse_command(&argv_buf);;
 
 		if (res) 
 		{

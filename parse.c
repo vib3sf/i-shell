@@ -9,25 +9,27 @@ static void empty_buf(char **buf, int *pbuf_size);
 
 static void extend_buf(char **buf, int *buf_size, char c);
 
-
-int handle_command(int first_c, char ***argv_buf)
+int parse_command(char ***argv_buf)
 {
     char *buf = malloc(sizeof(char));      /* buffer for args */
 	*buf = '\0';
 
-    int c = first_c, buf_size = 1, argc = 0, quotes_count = 0;
+    int c, buf_size = 1, argc = 0;
+	char_state_t state;
+	
 
-    while(c != '\n')
+    while((c = getchar()) != '\n')
 	{
         switch(c) 
 		{
+			case EOF:
+				exit(0);
             case '\\':
                 c = getchar();
                 extend_buf(&buf, &buf_size, c);
                 break;
-
-            case ' ':
-                if (quotes_count % 2 == 1)
+           case ' ':
+                if (state == quotes)
 				{
                     extend_buf(&buf, &buf_size, c);
                 }
@@ -36,21 +38,53 @@ int handle_command(int first_c, char ***argv_buf)
                     add_argv(&argc, argv_buf, buf, buf_size);
                     empty_buf(&buf, &buf_size);
                 }
+				state = space;
                 break;
 
             case '"':
-                quotes_count++;
+				state = (state == quotes) ? normal : quotes;
                 break;
                 
+			case '&': case '|': case '>': case '<': case ';': case '(': case ')':
+				if (state == quotes)
+				{
+					extend_buf(&buf, &buf_size, c);
+					break;
+				}
+
+				if(state == normal){
+                    add_argv(&argc, argv_buf, buf, buf_size);
+                    empty_buf(&buf, &buf_size);
+				}
+
+				/* special args may have max 2 chars and chars as &, | and > */
+				if((state == special && 
+						!((c == '&' || c == '|' || c == '>') && c == buf[0])) ||
+						strlen(buf) > 1) 
+				{
+
+					printf("Special chars error\n");
+					exit(1);
+				}
+
+				state = special;
+				extend_buf(&buf, &buf_size, c);
+				break;
+
             default:
+				if(state == special)
+				{
+					add_argv(&argc, argv_buf, buf, buf_size);
+					empty_buf(&buf, &buf_size);
+					break;
+				}
+				state = normal;
                 extend_buf(&buf, &buf_size, c);
                 break;
         }
-
-        c = getchar();
     } 
     
-    if(*buf)
+    if(state != space)
 	{
         add_argv(&argc, argv_buf, buf, buf_size);
 	}
@@ -60,7 +94,7 @@ int handle_command(int first_c, char ***argv_buf)
     *argv_buf = realloc(*argv_buf, (argc + 1) * sizeof(char *));
 	(*argv_buf)[argc] = NULL;
 
-	return (quotes_count % 2 == 1) ? -1 : 0;
+	return state == quotes;
 }
 
 static void add_argv(int *pargc, char ***pargv, const char *buf, int buf_size)
