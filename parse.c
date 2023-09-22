@@ -3,136 +3,197 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void add_argv(int *argc, char ***argv, const char *buf, int buf_size);
+/* inits pd with starting value */
+void parse_init(parse_t **pd);
 
-static void empty_buf(char **buf, int *pbuf_size);
+/* array memory funcs */
+static void add_argv(parse_t *prs);
+static void empty_buf(parse_t *prs);
+static void extend_buf(parse_t *prs);
 
-static void extend_buf(char **buf, int *buf_size, char c);
+/* handlers controller */
+static void handle_char(parse_t *prs);
+
+/* handles chars funcs */
+static void handle_slash(parse_t *prs);
+static void handle_space(parse_t *prs);
+static void handle_quote(parse_t *prs);
+static void handle_special_char(parse_t *prs);
+static void handle_normal_char(parse_t *prs);
+
+/* adds last arg value and cleans memory */
+static void finish_parse(parse_t *prs, char ***argv_buf);
 
 int parse_command(char ***argv_buf)
 {
-    char *buf = malloc(sizeof(char));      /* buffer for args */
-	*buf = '\0';
-
-    int c, buf_size = 1, argc = 0;
-	char_state_t state;
+	parse_t *prs;
+	parse_init(&prs);
 	
-
-    while((c = getchar()) != '\n')
+    while((prs->c = getchar()) != '\n')
 	{
-        switch(c) 
-		{
-			case EOF:
-				exit(0);
-            case '\\':
-                c = getchar();
-                extend_buf(&buf, &buf_size, c);
-                break;
-           case ' ':
-                if (state == quotes)
-				{
-                    extend_buf(&buf, &buf_size, c);
-                }
-                else if(*buf) 
-				{
-                    add_argv(&argc, argv_buf, buf, buf_size);
-                    empty_buf(&buf, &buf_size);
-                }
-				state = space;
-                break;
-
-            case '"':
-				state = (state == quotes) ? normal : quotes;
-                break;
-                
-			case '&': case '|': case '>': case '<': case ';': case '(': case ')':
-				if (state == quotes)
-				{
-					extend_buf(&buf, &buf_size, c);
-					break;
-				}
-
-				if(state == normal){
-                    add_argv(&argc, argv_buf, buf, buf_size);
-                    empty_buf(&buf, &buf_size);
-				}
-
-				/* special args may have max 2 chars and chars as &, | and > */
-				if((state == special && 
-						!((c == '&' || c == '|' || c == '>') && c == buf[0])) ||
-						strlen(buf) > 1) 
-				{
-
-					printf("Special chars error\n");
-					exit(1);
-				}
-
-				state = special;
-				extend_buf(&buf, &buf_size, c);
-				break;
-
-            default:
-				if(state == special)
-				{
-					add_argv(&argc, argv_buf, buf, buf_size);
-					empty_buf(&buf, &buf_size);
-					break;
-				}
-				state = normal;
-                extend_buf(&buf, &buf_size, c);
-                break;
-        }
-    } 
-    
-    if(state != space)
-	{
-        add_argv(&argc, argv_buf, buf, buf_size);
+		handle_char(prs);
 	}
 
-	free(buf);
-
-    *argv_buf = realloc(*argv_buf, (argc + 1) * sizeof(char *));
-	(*argv_buf)[argc] = NULL;
-
-	return state == quotes;
+    finish_parse(prs, argv_buf);
+	return prs->state == quotes;
 }
 
-static void add_argv(int *pargc, char ***pargv, const char *buf, int buf_size)
+void parse_init(parse_t **prs)
 {
-    *pargv = realloc(*pargv, (*pargc + 1) * sizeof(char *));
-
-    char **p = &(*pargv)[*pargc];	/* The great mystery of humanity */
-    *p = malloc(buf_size * sizeof(char*));
-    strcpy(*p, buf);
-
-    (*pargc)++;
+	*prs = malloc(sizeof(parse_t));
+    (*prs)->buf = malloc(sizeof(char));      /* buffer for args */
+	*(*prs)->buf = '\0';
+	(*prs)->state = normal;
+	(*prs)->buf_size = 1;
+	(*prs)->argc = 0;
+	(*prs)->argv = NULL;
 }
 
-static void empty_buf(char **pbuf, int *pbuf_size)
+static void handle_char(parse_t *prs)
 {
-    free(*pbuf);
-    *pbuf = malloc(sizeof(char));
-    **pbuf = '\0';
-    *pbuf_size = 1;
+	switch(prs->c) 
+	{
+		case EOF:
+			exit(0);
+
+		case '\\':
+			handle_slash(prs); 
+			break;
+
+	   case ' ':
+			handle_space(prs); 
+			break;
+
+		case '"':
+			handle_quote(prs); 
+			break;
+
+		case '&': case '|': case '>': case '<': case ';': case '(': case ')':
+			handle_special_char(prs);
+			break;
+
+		default:
+			handle_normal_char(prs);
+	} 
+}
+
+static void handle_slash(parse_t *prs)
+{
+	prs->c = getchar();
+	extend_buf(prs);
+}
+
+static void handle_space(parse_t *prs)
+{
+	if (prs->state == quotes)
+	{
+		extend_buf(prs);
+		return;
+	}
+	else if(*(prs->buf)) 
+	{
+		add_argv(prs);
+		empty_buf(prs);
+	}
+	prs->state = space;
+}
+
+static void handle_quote(parse_t *prs)
+{
+	prs->state = (prs->state != quotes) ? quotes : normal;
+}
+
+static void handle_special_char(parse_t *prs)
+{
+	if (prs->state == quotes)
+	{
+		extend_buf(prs);
+		return;
+	}
+
+	if(prs->state == normal){
+		add_argv(prs);
+		empty_buf(prs);
+	}
+
+	/* special args may have max 2 chars and chars as &, | and > */
+	if((prs->state == special && 
+			!((prs->c == '&' || prs->c == '|' || prs->c == '>') && prs->c == prs->buf[0])) ||
+			strlen(prs->buf) > 1) 
+	{
+
+		printf("Special chars error\n");
+		exit(1);
+	}
+
+	prs->state = special;
+	extend_buf(prs);
+
+}
+
+static void handle_normal_char(parse_t *prs)
+{
+	if(prs->state == special)
+	{
+		add_argv(prs);
+		empty_buf(prs);
+	}
+	
+	if(prs->state != quotes)
+		prs-> state = normal;
+	
+	extend_buf(prs);
+}
+
+static void finish_parse(parse_t *prs, char ***argv_buf)
+{
+	if(prs->state != space)
+	{
+        add_argv(prs);
+	}
+
+	free(prs->buf);
+
+    *argv_buf = realloc(prs->argv, (prs->argc + 1) * sizeof(char *));
+	(*argv_buf)[prs->argc] = NULL;
+}
+
+static void add_argv(parse_t *prs)
+{
+    prs->argv = realloc(prs->argv, (prs->argc + 1) * sizeof(char *));
+
+    char **p = &(prs->argv)[prs->argc];	/* The great mystery of humanity */
+    *p = malloc(prs->buf_size * sizeof(char));
+    strcpy(*p, prs->buf);
+
+    prs->argc++;
+}
+
+static void empty_buf(parse_t *prs)
+{
+    free(prs->buf);
+    prs->buf = malloc(sizeof(char));
+    *(prs->buf) = '\0';
+    prs->buf_size = 1;
+}
+
+static void extend_buf(parse_t *prs)
+{
+    prs->buf = realloc(prs->buf, (prs->buf_size + 1) * sizeof(char));
+    (prs->buf)[prs->buf_size - 1] = prs->c;
+    (prs->buf)[prs->buf_size] = '\0';
+	prs->buf_size++;
 }
 
 void free_argv(char **argv)
 {
-	int i = 0;
-    for(char **tmp = argv; *tmp; tmp++, i++)
+    for(char **tmp = argv; *tmp; tmp++)
         free(*tmp);
     free(argv);
-}
-
-static void extend_buf(char **buf, int *pbuf_size, char c)
-{
-    *buf = realloc(*buf, (*pbuf_size + 1) * sizeof(char));
-    (*buf)[*pbuf_size - 1] = c;
-    (*buf)[*pbuf_size] = '\0';
-    (*pbuf_size)++;
 }
 
 void print_parse_error(int res)
 {
     printf("Error: unmatched quotes.\n");
 }
+

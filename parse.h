@@ -16,6 +16,18 @@ typedef enum char_state
 	space
 } char_state_t;
 
+typedef struct parse
+{
+	int c;
+	char_state_t state;
+	char *buf;
+	int buf_size;
+	char **argv;
+	int argc;
+} parse_t;
+
+void parse_init(parse_t **pd);
+
 int parse_command(char ***argv_buf);
 
 void print_result(int res, int argc, char **argv);
