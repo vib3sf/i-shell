@@ -4,7 +4,7 @@
 #include <string.h>
 
 /* inits pd with starting value */
-void parse_init(parse_t **pd);
+static void parse_init(parse_t **prs);
 
 /* array memory funcs */
 static void add_argv(parse_t *prs);
@@ -38,7 +38,7 @@ int parse_command(char ***argv_buf)
 	return prs->state == quotes;
 }
 
-void parse_init(parse_t **prs)
+static void parse_init(parse_t **prs)
 {
 	*prs = malloc(sizeof(parse_t));
     (*prs)->buf = malloc(sizeof(char));      /* buffer for args */

@@ -26,7 +26,6 @@ typedef struct parse
 	int argc;
 } parse_t;
 
-void parse_init(parse_t **pd);
 
 int parse_command(char ***argv_buf);
 
