@@ -14,8 +14,9 @@ static char *expand_home_dir(char *path);
 
 static char *get_home_dir();
 
-int exec(char **argv)
+int exec(char **argv, int *zombie_count)
 {
+	int fg = 0;
 	if(!strcmp(argv[0], "cd")) 
 	{
 		if (argv[2])
@@ -41,14 +42,26 @@ int exec(char **argv)
 			cr_fork(argv, start, cur - 1);
 			start = cur + 1;
 		}
+		else if(!strcmp(*p, "&"))
+		{
+			cr_fork(argv, start, cur - 1);
+			start = cur + 1;
+			(*zombie_count)++;
+		}
 		cur++;
 	}
 
 	if(start != cur){
-		cr_fork(argv, start, cur);
-		int status, wr;
-		wr = wait(&status);
+		fg = cr_fork(argv, start, cur);
+		
 	}
+
+	int status, wr;
+	do
+	{
+		wr = waitpid(fg, &status, WNOHANG);
+				
+	} while(!wr);
 
 	return 0;
 }
@@ -107,7 +120,7 @@ static int cr_fork(char **argv, int start, int end)
 		return -1;
 	}
 	
-	return 0;
+	return p;
 
 }
 
@@ -121,4 +134,17 @@ static int exec_args(char **argv, int start, int end)
 	execvp(cmdline[0], cmdline);
 	perror(cmdline[0]);
 	_exit(1);
+}
+
+void wait_zombies(int *zombie_count)
+{
+	int i = *zombie_count, wr;
+	while (i){
+		wr = waitpid(-1, NULL, WNOHANG);
+		if (wr)
+		{
+			(*zombie_count)--;
+		}
+		i--;
+	}
 }
