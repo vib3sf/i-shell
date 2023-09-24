@@ -24,6 +24,8 @@ static void handle_normal_char(parse_t *prs);
 /* adds last arg value and cleans memory */
 static void finish_parse(parse_t *prs, char ***argv_buf);
 
+#define START_BUF_SIZE 4;
+
 int parse_command(char ***argv_buf)
 {
 	parse_t *prs;
@@ -41,10 +43,11 @@ int parse_command(char ***argv_buf)
 static void parse_init(parse_t **prs)
 {
 	*prs = malloc(sizeof(parse_t));
-    (*prs)->buf = malloc(sizeof(char));      /* buffer for args */
+	(*prs)->buf_size = START_BUF_SIZE;
+	(*prs)->buf_count = 1;
+    (*prs)->buf = malloc(sizeof(char) * (*prs)->buf_size);      /* buffer for args */
 	*(*prs)->buf = '\0';
 	(*prs)->state = normal;
-	(*prs)->buf_size = 1;
 	(*prs)->argc = 0;
 	(*prs)->argv = NULL;
 }
@@ -172,17 +175,22 @@ static void add_argv(parse_t *prs)
 static void empty_buf(parse_t *prs)
 {
     free(prs->buf);
-    prs->buf = malloc(sizeof(char));
+    prs->buf_size = START_BUF_SIZE;
+	prs->buf_count = 1;
+    prs->buf = malloc(sizeof(char) * prs->buf_size);
     *(prs->buf) = '\0';
-    prs->buf_size = 1;
 }
 
 static void extend_buf(parse_t *prs)
 {
-    prs->buf = realloc(prs->buf, (prs->buf_size + 1) * sizeof(char));
-    (prs->buf)[prs->buf_size - 1] = prs->c;
-    (prs->buf)[prs->buf_size] = '\0';
-	prs->buf_size++;
+	if(prs->buf_count == prs->buf_size)
+	{
+		prs->buf_size *= 2;
+		prs->buf = realloc(prs->buf, prs->buf_size * sizeof(char));
+	}
+    (prs->buf)[prs->buf_count - 1] = prs->c;
+    (prs->buf)[prs->buf_count] = '\0';
+	prs->buf_count++;
 }
 
 void free_argv(char **argv)

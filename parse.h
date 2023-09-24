@@ -22,6 +22,7 @@ typedef struct parse
 	char_state_t state;
 	char *buf;
 	int buf_size;
+	int buf_count;
 	char **argv;
 	int argc;
 } parse_t;
