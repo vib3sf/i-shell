@@ -56,7 +56,7 @@ static void argv_to_cmds(cmdtemp_t *tmp)
 static void handle_arg(cmdtemp_t *tmp)
 {
 	int res;
-	if(tmp->cur == tmp->end)
+	if(tmp->start == tmp->end)
 	{
 		if(!strcmp(tmp->argv[tmp->cur], "cd"))
 		{
@@ -66,16 +66,8 @@ static void handle_arg(cmdtemp_t *tmp)
 			tmp->type = usual;
 	}
 
-	if(tmp->type == cd && tmp->cur - tmp->start > 1)
-	{
-		printf("The cd have only one arg.\n");
-		exec_command(tmp);
-	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&&"))
 	{
-		if(tmp->type != cd)
-			tmp->type = usual;
-
 		exec_command(tmp);
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&"))
@@ -105,6 +97,11 @@ static void handle_arg(cmdtemp_t *tmp)
 		tmp->fd_out = change_fd(tmp->argv[tmp->cur + 1], append, tmp->fd_out);
 		tmp->end--;
 		return;
+	}
+	else if(tmp->type == cd && tmp->cur - tmp->start > 1)
+	{
+		printf("The cd have only one arg.\n");
+		tmp->err_flag = 1;
 	}
 	tmp->end++;
 }
