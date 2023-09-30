@@ -28,11 +28,9 @@ typedef struct parse
 } parse_t;
 
 
-int parse_command(char ***argv_buf);
+int parse_command(char ***argv_buf, int *argc);
 
-void print_result(int res, int argc, char **argv);
-
-void free_argv(char **argv);
+void free_argv(char **argv, int argc);
 
 void print_parse_error(int res);
 

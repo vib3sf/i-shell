@@ -1,4 +1,6 @@
 #include "exec.h"
+#include "stream.h"
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,44 +8,26 @@
 #include <string.h>
 #include <pwd.h>
 
-static int cr_proc(command_t *cmd);
-
-static int exec_cd(char **argv);
-static int exec_commands(char **argv, int *zombie_count);
-static void exec_bg_cmd(command_t *cmd, int *zombie_count);
-static void exec_cmd(command_t *cmd);
+static void exec_bg(command_t *cmd);
+static void exec_usual(command_t *cmd);
 
 static int exec_args(command_t *cmd);
 static int cr_fork(command_t *cmd);
 static char *expand_home_dir(char *path);
 static char *get_home_dir();
 
-int exec(char **argv, int *zombie_count)
+int exec(command_t *cmd)
 {
-	int result;
-	if(!strcmp(argv[0], "cd")) 
+	switch(cmd->type)
 	{
-		result = exec_cd(argv);	
-	}
-	else {
-		result = exec_commands(argv, zombie_count);
-	}
-
-	return result;
-}
-
-static int exec_cd(char **argv)
-{
-	if (argv[2] && argv[1])
-	{
-		printf("Error: cd have only 1 arg\n");
-		return -1;
-	}
-	int chd = change_dir(argv[1]);
-
-	if(chd) {
-		perror(argv[1]);
-		return -1;
+		case cd:
+			change_dir(cmd->args[1]);
+			break;
+		case usual:
+			exec_usual(cmd);
+			break;
+		case bg:
+			exec_bg(cmd);
 	}
 	return 0;
 }
@@ -86,102 +70,68 @@ static char *get_home_dir()
 }
 
 
-static int exec_commands(char **argv, int *zombie_count)
-{
-	command_t *cmd = malloc(sizeof(command_t));
-
-	cmd->argv = argv;
-	cmd->start = 0;
-	cmd->cur = 0;
-
-	for(char **p = argv; *p; p++)
-	{
-		if(!strcmp(*p, "&&"))
-		{
-			exec_cmd(cmd);
-		}
-		else if(!strcmp(*p, "&"))
-		{
-			exec_bg_cmd(cmd, zombie_count);
-		}
-		cmd->cur++;
-	}
-
-	if(cmd->start != cmd->cur){
-		cmd->cur++;
-		exec_cmd(cmd);
-	}
-
-	free(cmd);
-
-	return 0;
-}
-
-static void exec_cmd(command_t *cmd)
+static void exec_usual(command_t *cmd)
 {
 	int wr;
-	cmd->cur_pid = cr_proc(cmd);
+	int pid = cr_fork(cmd);
 
 	do 
-		wr = waitpid(cmd->cur_pid, NULL, WNOHANG);
+		wr = waitpid(pid, NULL, WNOHANG);
 	while(!wr);
 }
 
-static void exec_bg_cmd(command_t *cmd, int *zombie_count)
+static void exec_bg(command_t *cmd)
 {
-	cr_proc(cmd);
-	(*zombie_count)++;
-}
-
-static int cr_proc(command_t *cmd)
-{
-	int pid = cr_fork(cmd);
-	cmd->start = cmd->cur + 1;
-	return pid;
+	cr_fork(cmd);
 }
 
 static int cr_fork(command_t *cmd)
 {
-	int p = fork();
-
-	if(p == -1) 
+	int pid = fork();
+	
+	if(pid == -1) 
 	{
 		perror("fork");
 		return -1;
 	}
 
-	if(p == 0) 
+	if(pid == 0) 
 	{
+		dup_streams(cmd->fd_in, cmd->fd_out);
 		exec_args(cmd);
-		perror(cmd->argv[0]);
+		perror(*cmd->args);
 		return -1;
 	}
+
+	if(cmd->fd_in != 0){
+		close(cmd->fd_in);
+		cmd->fd_in = 0;
+	}
+
+	if(cmd->fd_out != 1){
+		close(cmd->fd_out);
+		cmd->fd_in = 1;
+	}
 	
-	return p;
+	return pid;
 
 }
 
 static int exec_args(command_t *cmd)
 {
-	int size = cmd->cur - cmd->start;
-	char **cmdline = malloc((size + 1) * sizeof(char*));
-	for(int i = 0; i < size; i++) {
-		cmdline[i] = cmd->argv[cmd->start + i];
-	}
-	cmdline[size] = NULL;
-	execvp(cmdline[0], cmdline);
-	perror(cmdline[0]);
+	execvp(*cmd->args, cmd->args);
+	perror(*cmd->args);
 	_exit(1);
 }
 
-void wait_zombies(int *zombie_count)
+void wait_bgs(int *bg_count)
 {
-	int i = *zombie_count, wr;
+	int i = *bg_count, wr;
 	while (i){
 		wr = waitpid(-1, NULL, WNOHANG);
 		if (wr)
 		{
-			(*zombie_count)--;
+			(*bg_count)--;
 		}
 		i--;
 	}

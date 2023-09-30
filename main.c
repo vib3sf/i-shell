@@ -1,3 +1,4 @@
+#include "command.h"
 #include "parse.h"
 #include "exec.h"
 #include <stdio.h>
@@ -5,23 +6,21 @@
 int main()
 {
 	change_dir(NULL);	/* cd to home dir */
-	int zombie_count = 0;
+	int bg_count = 0, argc;
     for(;;) 
 	{
-		wait_zombies(&zombie_count);
+		wait_bgs(&bg_count);
         printf("> ");
 
 		char** argv_buf = NULL;
-        int res = parse_command(&argv_buf);
+        int res = parse_command(&argv_buf, &argc);
 
 		if (res) 
-		{
 			print_parse_error(res);
-		} 
 		else
-			exec(argv_buf, &zombie_count);
+			handle_commands(argv_buf, argc, &bg_count);
 
-        free_argv(argv_buf);
+        free_argv(argv_buf, argc);
     }
     return 0;
 }

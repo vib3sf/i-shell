@@ -22,11 +22,11 @@ static void handle_special_char(parse_t *prs);
 static void handle_normal_char(parse_t *prs);
 
 /* adds last arg value and cleans memory */
-static void finish_parse(parse_t *prs, char ***argv_buf);
+static void finish_parse(parse_t *prs, char ***argv_buf, int *argc);
 
 #define START_BUF_SIZE 4;
 
-int parse_command(char ***argv_buf)
+int parse_command(char ***argv_buf, int *argc)
 {
 	parse_t *prs;
 	parse_init(&prs);
@@ -36,7 +36,7 @@ int parse_command(char ***argv_buf)
 		handle_char(prs);
 	}
 
-    finish_parse(prs, argv_buf);
+    finish_parse(prs, argv_buf, argc);
 	return prs->state == quotes;
 }
 
@@ -148,7 +148,7 @@ static void handle_normal_char(parse_t *prs)
 	extend_buf(prs);
 }
 
-static void finish_parse(parse_t *prs, char ***argv_buf)
+static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 {
 	if(prs->state != space)
 	{
@@ -157,8 +157,8 @@ static void finish_parse(parse_t *prs, char ***argv_buf)
 
 	free(prs->buf);
 
-    *argv_buf = realloc(prs->argv, (prs->argc + 1) * sizeof(char *));
-	(*argv_buf)[prs->argc] = NULL;
+	*argc = prs->argc;
+	*argv_buf = prs->argv;
 }
 
 static void add_argv(parse_t *prs)
@@ -193,10 +193,10 @@ static void extend_buf(parse_t *prs)
 	prs->buf_count++;
 }
 
-void free_argv(char **argv)
+void free_argv(char **argv, int argc)
 {
-    for(char **tmp = argv; *tmp; tmp++)
-        free(*tmp);
+    for(int i = 0; i < argc; i++)
+        free(argv[i]);
     free(argv);
 }
 
