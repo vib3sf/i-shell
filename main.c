@@ -15,9 +15,7 @@ int main()
 		char** argv_buf = NULL;
         int res = parse_command(&argv_buf, &argc);
 
-		if (res) 
-			print_parse_error(res);
-		else
+		if (!res) 
 			handle_commands(argv_buf, argc, &bg_count);
 
         free_argv(argv_buf, argc);

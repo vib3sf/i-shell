@@ -8,6 +8,14 @@
  * Space is space :)
  */
 
+typedef enum parse_err
+{
+	quotes_err,
+	special_char_err,
+	no_err,
+}
+parse_err_t;
+
 typedef enum char_state 
 {
 	normal,
@@ -25,13 +33,11 @@ typedef struct parse
 	int buf_count;
 	char **argv;
 	int argc;
+	parse_err_t err;
 } parse_t;
 
 
 int parse_command(char ***argv_buf, int *argc);
-
 void free_argv(char **argv, int argc);
-
-void print_parse_error(int res);
 
 #endif
