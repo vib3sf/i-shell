@@ -11,7 +11,7 @@
 static void exec_bg(command_t *cmd);
 static void exec_usual(command_t *cmd);
 
-static int exec_args(command_t *cmd);
+static int exec_argv(command_t *cmd);
 static int cr_fork(command_t *cmd);
 static char *expand_home_dir(char *path);
 static char *get_home_dir();
@@ -21,7 +21,7 @@ int exec(command_t *cmd)
 	switch(cmd->type)
 	{
 		case cd:
-			change_dir(cmd->args[1]);
+			change_dir(cmd->argv[1]);
 			break;
 		case usual:
 			exec_usual(cmd);
@@ -98,8 +98,8 @@ static int cr_fork(command_t *cmd)
 	if(pid == 0) 
 	{
 		dup_streams(cmd->fd_in, cmd->fd_out);
-		exec_args(cmd);
-		perror(*cmd->args);
+		exec_argv(cmd);
+		perror(*cmd->argv);
 		return -1;
 	}
 
@@ -117,10 +117,10 @@ static int cr_fork(command_t *cmd)
 
 }
 
-static int exec_args(command_t *cmd)
+static int exec_argv(command_t *cmd)
 {
-	execvp(*cmd->args, cmd->args);
-	perror(*cmd->args);
+	execvp(*cmd->argv, cmd->argv);
+	perror(*cmd->argv);
 	_exit(1);
 }
 

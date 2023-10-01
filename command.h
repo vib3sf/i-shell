@@ -11,7 +11,7 @@ cmdtype_t;
 
 typedef struct command
 {
-	char **args;
+	char **argv;
 	cmdtype_t type;
 	int fd_in;
 	int fd_out;
@@ -20,15 +20,13 @@ command_t;
 
 typedef struct cmdtemp
 {
+	command_t *cmd;
 	char **argv;
 	int argc;
-	int fd_in;
-	int fd_out;
 	int start;
 	int end;
 	int cur;
 	int count;
-	cmdtype_t type;
 	int err_flag;
 	int *bg_count;
 }
