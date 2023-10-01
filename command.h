@@ -18,6 +18,17 @@ typedef struct command
 }
 command_t;
 
+typedef enum cmd_err
+{
+	no_cmd_err,
+	cd_many_args_err,
+	cd_err,
+	exec_err,
+	fork_err,
+	fopen_err,
+}
+cmd_err_t;
+
 typedef struct cmdtemp
 {
 	command_t *cmd;
@@ -27,8 +38,8 @@ typedef struct cmdtemp
 	int end;
 	int cur;
 	int count;
-	int err_flag;
 	int *bg_count;
+	cmd_err_t err;
 }
 cmdtemp_t;
 

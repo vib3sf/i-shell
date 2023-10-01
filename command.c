@@ -10,19 +10,25 @@ static void argv_to_cmds(cmdtemp_t *tmp);
 static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc, int *bg_count);
 static void cmd_init(command_t **cmd);
 
-static int exec_command(cmdtemp_t *tmp);
+static void exec_command(cmdtemp_t *tmp);
 
 static void handle_arg(cmdtemp_t *tmp);
 static void array_from_to(char **from, char ***to, int start, int end);
-static void skip(cmdtemp_t *tmp);
 static void free_cmd(command_t *cmd);
+
+static void change_stream(cmdtemp_t *tmp, stream_t stream);
+
+static void check_errors(cmd_err_t err);
 
 void handle_commands(char **argv, int argc, int *bg_count)
 {
 	cmdtemp_t *tmp;
 	cmdtemp_init(&tmp, argv, argc, bg_count);
 	cmd_init(&tmp->cmd);
+
 	argv_to_cmds(tmp);
+	check_errors(tmp->err);
+
 	free(tmp->cmd);
 	free(tmp);
 }
@@ -36,7 +42,7 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc, int *bg_count)
 	(*tmp)->end = 0;
 	(*tmp)->cur = 0;
 	(*tmp)->count = 0;
-	(*tmp)->err_flag = 0;
+	(*tmp)->err = no_cmd_err;
 	(*tmp)->bg_count = bg_count;
 }
 
@@ -50,17 +56,18 @@ static void cmd_init(command_t **cmd)
 
 static void argv_to_cmds(cmdtemp_t *tmp)
 {
-	while(tmp->cur < tmp->argc){
-		if(!tmp->err_flag)
-			handle_arg(tmp);
-		else
-			skip(tmp);
+	while(tmp->cur < tmp->argc)
+	{
+		if(tmp->err != no_cmd_err)
+			return;
 
+		handle_arg(tmp);
 		tmp->cur++;
 	}
 
-	if(tmp->start != tmp->end)
+	if(tmp->start != tmp->end && tmp->err == no_cmd_err)
 		exec_command(tmp);
+
 }
 
 static void handle_arg(cmdtemp_t *tmp)
@@ -69,58 +76,52 @@ static void handle_arg(cmdtemp_t *tmp)
 	{
 		tmp->cmd->type = cd;
 	}
+	else if(tmp->cmd->type == cd && tmp->cur - tmp->start > 1)
+	{
+		tmp->err = cd_many_args_err;
+	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&&"))
 	{
 		exec_command(tmp);
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&"))
 	{
-		if(tmp->cmd->type != cd)
+		if(tmp->cmd->type == usual)
 			tmp->cmd->type = bg;
 
-		int ok = exec_command(tmp);
-		if(!ok)
-			(*tmp->bg_count)++;
-
+		exec_command(tmp);
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], "<"))
 	{
-		tmp->cmd->fd_in = change_fd(tmp->argv[tmp->cur + 1], 
-				in, tmp->cmd->fd_in);
-		tmp->end--;
+		change_stream(tmp, in);
 		return;
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], ">"))
 	{
-		tmp->cmd->fd_out = change_fd(tmp->argv[tmp->cur + 1], 
-				out, tmp->cmd->fd_out);
-		tmp->end--;
+		change_stream(tmp, out);
 		return;
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], ">>"))
 	{
-		tmp->cmd->fd_out = change_fd(tmp->argv[tmp->cur + 1], 
-				append, tmp->cmd->fd_out);
-		tmp->end--;
+		change_stream(tmp, append);
 		return;
 	}
-	else if(tmp->cmd->type == cd && tmp->cur - tmp->start > 1)
-	{
-		printf("The cd have only one arg.\n");
-		tmp->err_flag = 1;
-	}
+
 	tmp->end++;
 }
 
-static int exec_command(cmdtemp_t *tmp)
+static void exec_command(cmdtemp_t *tmp)
 {
 	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
-	int ok = exec(tmp->cmd);
+
+	tmp->err = exec(tmp->cmd);
+	if(tmp->err == no_cmd_err && tmp->cmd->type == bg)
+		(*tmp->bg_count)++;
+
 	tmp->start = tmp->cur + 1;
 	tmp->end = tmp->cur;
 	free_cmd(tmp->cmd);
 	cmd_init(&tmp->cmd);
-	return ok;
 }
 
 static void array_from_to(char **from, char ***to, int start, int end)
@@ -134,13 +135,30 @@ static void array_from_to(char **from, char ***to, int start, int end)
 	(*to)[size] = NULL;
 }
 
-static void skip(cmdtemp_t *tmp)
+static void change_stream(cmdtemp_t *tmp, stream_t stream)
 {
-	if(!strcmp(tmp->argv[tmp->end], "&&")	|| 
-		!strcmp(tmp->argv[tmp->end], "&")	|| 
-		tmp->end == tmp->argc)
+	int *fd = (stream == in) ? &tmp->cmd->fd_in : &tmp->cmd->fd_out;
+
+	*fd = change_fd(tmp->argv[tmp->cur + 1], 
+			stream, *fd);
+
+	if(*fd == -1)
+		tmp->err = fopen_err;
+
+	tmp->end--;
+}
+
+static void check_errors(cmd_err_t err)
+{
+	switch(err)
 	{
-		tmp->err_flag = 0;
+		case no_cmd_err:
+			return;
+		case cd_many_args_err:
+			printf("cd can have maximum one argument.\n");
+			return;
+		default:
+			return;
 	}
 }
 

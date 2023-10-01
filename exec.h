@@ -2,10 +2,10 @@
 #define EXEC_H
 
 #include "command.h"
-int exec(command_t *cmd);
+cmd_err_t exec(command_t *cmd);
 
 /* Changes directory to absolute or relative path (null path is home user directory)*/
-int change_dir(char *path);
+cmd_err_t change_dir(char *path);
 
 void wait_bgs(int *bg_count);
 

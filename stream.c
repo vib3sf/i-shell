@@ -1,4 +1,5 @@
 #include "stream.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -26,9 +27,9 @@ int change_fd(char *name, stream_t stream, int old_fd)
 	}
 	int fd = open(name, mode, 0666);
 
-	if(fd == -1){
+	if(fd == -1)
 		perror(name);
-	}
+
 	return fd;
 }
 

@@ -1,4 +1,5 @@
 #include "exec.h"
+#include "command.h"
 #include "stream.h"
 
 #include <unistd.h>
@@ -8,31 +9,30 @@
 #include <string.h>
 #include <pwd.h>
 
-static void exec_bg(command_t *cmd);
-static void exec_usual(command_t *cmd);
+static cmd_err_t exec_bg(command_t *cmd);
+static cmd_err_t exec_usual(command_t *cmd);
 
 static int exec_argv(command_t *cmd);
 static int cr_fork(command_t *cmd);
 static char *expand_home_dir(char *path);
 static char *get_home_dir();
 
-int exec(command_t *cmd)
+cmd_err_t exec(command_t *cmd)
 {
 	switch(cmd->type)
 	{
 		case cd:
-			change_dir(cmd->argv[1]);
+			return change_dir(cmd->argv[1]);
 			break;
 		case usual:
-			exec_usual(cmd);
+			return exec_usual(cmd);
 			break;
 		case bg:
-			exec_bg(cmd);
+			return exec_bg(cmd);
 	}
-	return 0;
 }
 
-int change_dir(char *path)
+cmd_err_t change_dir(char *path)
 {
 	int chd;
 
@@ -49,7 +49,13 @@ int change_dir(char *path)
 	else
 		chd = chdir(path);
 
-	return chd;
+	if(chd == -1)
+	{
+		perror(path);
+		return cd_err;
+	}
+
+	return no_cmd_err;
 }
 
 static char *expand_home_dir(char *path)
@@ -70,19 +76,28 @@ static char *get_home_dir()
 }
 
 
-static void exec_usual(command_t *cmd)
+static cmd_err_t exec_usual(command_t *cmd)
 {
-	int wr;
+	int wr, status;
 	int pid = cr_fork(cmd);
+	
+	if(pid == -1){
+		perror("fork");
+		return fork_err;
+	}
 
 	do 
-		wr = waitpid(pid, NULL, WNOHANG);
+		wr = waitpid(pid, &status, WNOHANG);
 	while(!wr);
+
+	return (WEXITSTATUS(status)) ? exec_err : no_cmd_err;
 }
 
-static void exec_bg(command_t *cmd)
+static cmd_err_t exec_bg(command_t *cmd)
 {
-	cr_fork(cmd);
+	int pid = cr_fork(cmd);
+	
+	return (pid == -1) ? fork_err : no_cmd_err;
 }
 
 static int cr_fork(command_t *cmd)
@@ -100,7 +115,7 @@ static int cr_fork(command_t *cmd)
 		dup_streams(cmd->fd_in, cmd->fd_out);
 		exec_argv(cmd);
 		perror(*cmd->argv);
-		return -1;
+		exit(1);
 	}
 
 	if(cmd->fd_in != 0){
