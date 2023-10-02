@@ -11,20 +11,17 @@ int change_fd(char *name, stream_t stream, int old_fd)
 	{
 		case in:
 			mode = O_RDONLY|O_CREAT;
-			if(old_fd != 0)
-				close(old_fd);
 			break;
 		case out:
-			if(old_fd != 1)
-				close(old_fd);
 			mode = O_WRONLY|O_CREAT|O_TRUNC;
 			break;
 		case append:
-			if(old_fd != 1)
-				close(old_fd);
 			mode = O_WRONLY|O_CREAT|O_APPEND;
 
 	}
+	if(old_fd != 0 && old_fd != 1)
+		close(old_fd);
+
 	int fd = open(name, mode, 0666);
 
 	if(fd == -1)
