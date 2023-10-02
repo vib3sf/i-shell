@@ -64,10 +64,6 @@ static void argv_to_cmds(cmdtemp_t *tmp)
 		handle_arg(tmp);
 		tmp->cur++;
 	}
-
-	if(tmp->start != tmp->end && tmp->err == no_cmd_err)
-		exec_command(tmp);
-
 }
 
 static void handle_arg(cmdtemp_t *tmp)
@@ -89,6 +85,11 @@ static void handle_arg(cmdtemp_t *tmp)
 		if(tmp->cmd->type == usual)
 			tmp->cmd->type = bg;
 
+		exec_command(tmp);
+	}
+	else if(tmp->cur == tmp->argc - 1)
+	{
+		tmp->end++;
 		exec_command(tmp);
 	}
 	else if(!strcmp(tmp->argv[tmp->cur], "<"))
