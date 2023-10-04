@@ -7,7 +7,7 @@
 #include <string.h>
 
 static void argv_to_cmds(cmdtemp_t *tmp);
-static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc, int *bg_count);
+static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc);
 static void cmd_init(command_t **cmd);
 
 static void exec_command(cmdtemp_t *tmp);
@@ -20,10 +20,10 @@ static void change_stream(cmdtemp_t *tmp, stream_t stream);
 
 static void check_errors(cmd_err_t err);
 
-void handle_commands(char **argv, int argc, int *bg_count)
+void handle_commands(char **argv, int argc)
 {
 	cmdtemp_t *tmp;
-	cmdtemp_init(&tmp, argv, argc, bg_count);
+	cmdtemp_init(&tmp, argv, argc);
 	cmd_init(&tmp->cmd);
 
 	argv_to_cmds(tmp);
@@ -33,7 +33,7 @@ void handle_commands(char **argv, int argc, int *bg_count)
 	free(tmp);
 }
 
-static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc, int *bg_count)
+static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 {
 	*tmp = malloc(sizeof(cmdtemp_t));
 	(*tmp)->argv = argv;
@@ -43,7 +43,6 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc, int *bg_count)
 	(*tmp)->cur = 0;
 	(*tmp)->count = 0;
 	(*tmp)->err = no_cmd_err;
-	(*tmp)->bg_count = bg_count;
 }
 
 static void cmd_init(command_t **cmd)
@@ -116,8 +115,6 @@ static void exec_command(cmdtemp_t *tmp)
 	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
 
 	tmp->err = exec(tmp->cmd);
-	if(tmp->err == no_cmd_err && tmp->cmd->type == bg)
-		(*tmp->bg_count)++;
 
 	tmp->start = tmp->cur + 1;
 	tmp->end = tmp->cur;

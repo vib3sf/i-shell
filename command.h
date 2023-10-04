@@ -38,11 +38,10 @@ typedef struct cmdtemp
 	int end;
 	int cur;
 	int count;
-	int *bg_count;
 	cmd_err_t err;
 }
 cmdtemp_t;
 
-void handle_commands(char **argv, int argc, int *bg_count);
+void handle_commands(char **argv, int argc);
 
 #endif

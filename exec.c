@@ -1,6 +1,7 @@
 #include "exec.h"
 #include "command.h"
 #include "stream.h"
+#include "sig_handlers.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -78,7 +79,7 @@ static char *get_home_dir()
 
 static cmd_err_t exec_usual(command_t *cmd)
 {
-	int wr, status;
+	switch_sigchld_status(ignore);
 	int pid = cr_fork(cmd);
 	
 	if(pid == -1){
@@ -86,9 +87,12 @@ static cmd_err_t exec_usual(command_t *cmd)
 		return fork_err;
 	}
 
+	int wr, status;
 	do 
 		wr = waitpid(pid, &status, WNOHANG);
 	while(!wr);
+
+	switch_sigchld_status(handle);
 
 	return (WEXITSTATUS(status)) ? exec_err : no_cmd_err;
 }
@@ -139,15 +143,4 @@ static int exec_argv(command_t *cmd)
 	_exit(1);
 }
 
-void wait_bgs(int *bg_count)
-{
-	int i = *bg_count, wr;
-	while (i){
-		wr = waitpid(-1, NULL, WNOHANG);
-		if (wr)
-		{
-			(*bg_count)--;
-		}
-		i--;
-	}
-}
+
