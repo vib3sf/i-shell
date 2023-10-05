@@ -42,6 +42,7 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 	(*tmp)->end = 0;
 	(*tmp)->cur = 0;
 	(*tmp)->count = 0;
+	(*tmp)->pipe_open = 0;
 	(*tmp)->err = no_cmd_err;
 }
 
@@ -86,6 +87,13 @@ static void handle_arg(cmdtemp_t *tmp)
 
 		exec_command(tmp);
 	}
+	else if(!strcmp(tmp->argv[tmp->cur], "|"))
+	{
+		if(tmp->cmd->type == usual)
+			tmp->cmd->type = pip;
+
+		exec_command(tmp);
+	}
 	else if(tmp->cur == tmp->argc - 1)
 	{
 		tmp->end++;
@@ -112,6 +120,14 @@ static void handle_arg(cmdtemp_t *tmp)
 
 static void exec_command(cmdtemp_t *tmp)
 {
+	if(tmp->pipe_open)
+	{
+		rd_pipe(tmp->pipe_open, &tmp->cmd->fd_in);
+		tmp->pipe_open = 0;
+	}
+	if(tmp->cmd->type == pip)
+		tmp->pipe_open = crwr_pipe(&tmp->cmd->fd_out);
+		
 	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
 
 	tmp->err = exec(tmp->cmd);

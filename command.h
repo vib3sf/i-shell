@@ -6,6 +6,7 @@ typedef enum cmdtype
 	usual,
 	bg,
 	cd,
+	pip,
 }
 cmdtype_t;
 
@@ -38,6 +39,7 @@ typedef struct cmdtemp
 	int end;
 	int cur;
 	int count;
+	int pipe_open;
 	cmd_err_t err;
 }
 cmdtemp_t;

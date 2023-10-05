@@ -6,7 +6,7 @@
 int main()
 {
 	change_dir(NULL);	/* cd to home dir */
-	int bg_count = 0, argc;
+	int argc;
     for(;;) 
 	{
         printf("> ");

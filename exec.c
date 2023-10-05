@@ -28,7 +28,7 @@ cmd_err_t exec(command_t *cmd)
 		case usual:
 			return exec_usual(cmd);
 			break;
-		case bg:
+		case bg: case pip:
 			return exec_bg(cmd);
 	}
 }
@@ -122,14 +122,16 @@ static int cr_fork(command_t *cmd)
 		exit(1);
 	}
 
-	if(cmd->fd_in != 0){
+	if(cmd->fd_in != 0)
+	{
 		close(cmd->fd_in);
 		cmd->fd_in = 0;
 	}
 
-	if(cmd->fd_out != 1){
+	if(cmd->fd_out != 1)
+	{
 		close(cmd->fd_out);
-		cmd->fd_in = 1;
+		cmd->fd_out = 1;
 	}
 	
 	return pid;
