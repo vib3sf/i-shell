@@ -72,10 +72,6 @@ static void handle_arg(cmdtemp_t *tmp)
 	{
 		tmp->cmd->type = cd;
 	}
-	else if(tmp->cmd->type == cd && tmp->cur - tmp->start > 1)
-	{
-		tmp->err = cd_many_args_err;
-	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&&"))
 	{
 		exec_command(tmp);
@@ -93,6 +89,10 @@ static void handle_arg(cmdtemp_t *tmp)
 			tmp->cmd->type = pip;
 
 		exec_command(tmp);
+	}
+	else if(tmp->cmd->type == cd && tmp->cur - tmp->start > 1)
+	{
+		tmp->err = cd_many_args_err;
 	}
 	else if(tmp->cur == tmp->argc - 1)
 	{
