@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/wait.h>
+#include <wait.h>
 #include <string.h>
 #include <pwd.h>
 
@@ -115,31 +115,20 @@ static int cr_fork(command_t *cmd)
 	}
 
 	if(pid == 0) 
-	{
-		dup_streams(cmd->fd_in, cmd->fd_out);
 		exec_argv(cmd);
-		perror(*cmd->argv);
-		exit(1);
-	}
 
-	if(cmd->fd_in != 0)
-	{
-		close(cmd->fd_in);
-		cmd->fd_in = 0;
-	}
+	close_streams(&cmd->fd_in, &cmd->fd_out);
 
-	if(cmd->fd_out != 1)
-	{
-		close(cmd->fd_out);
-		cmd->fd_out = 1;
-	}
-	
 	return pid;
-
 }
 
 static int exec_argv(command_t *cmd)
 {
+	if(cmd->pipe_in_tmp != 0)
+	{
+		close(cmd->pipe_in_tmp);
+	}
+	dup_streams(cmd->fd_in, cmd->fd_out);
 	execvp(*cmd->argv, cmd->argv);
 	perror(*cmd->argv);
 	_exit(1);

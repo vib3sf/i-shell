@@ -33,7 +33,7 @@ static int get_mode(stream_t stream)
 	}
 }
 
-int dup_streams(int fd_in, int fd_out)
+void dup_streams(int fd_in, int fd_out)
 {
 	if(fd_in != 0)
 	{
@@ -46,18 +46,29 @@ int dup_streams(int fd_in, int fd_out)
 		dup2(fd_out, 1);
 		close(fd_out);
 	}
-
-	return 0;
 }
 
-int crwr_pipe(int *fd_out)
+void close_streams(int *fd_in, int *fd_out)
 {
+	if(*fd_in != 0)
+	{
+		close(*fd_in);
+		fd_in = 0;
+	}
+
 	if(*fd_out != 1)
+	{
 		close(*fd_out);
+		*fd_out = 1;
+	}
+}
+
+void crwr_pipe(int *fd_in, int *fd_out)
+{
 	int fd[2];
 	pipe(fd);
+	*fd_in = fd[0];
 	*fd_out = fd[1];
-	return fd[0];
 }
 
 void rd_pipe(int pipe_in, int *fd_in)

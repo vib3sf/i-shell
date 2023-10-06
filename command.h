@@ -16,6 +16,7 @@ typedef struct command
 	cmdtype_t type;
 	int fd_in;
 	int fd_out;
+	int pipe_in_tmp;
 }
 command_t;
 
@@ -39,7 +40,7 @@ typedef struct cmdtemp
 	int end;
 	int cur;
 	int count;
-	int pipe_open;
+	int prev_pipe_in;
 	cmd_err_t err;
 }
 cmdtemp_t;

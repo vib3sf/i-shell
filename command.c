@@ -42,7 +42,7 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 	(*tmp)->end = 0;
 	(*tmp)->cur = 0;
 	(*tmp)->count = 0;
-	(*tmp)->pipe_open = 0;
+	(*tmp)->prev_pipe_in = 0;
 	(*tmp)->err = no_cmd_err;
 }
 
@@ -120,14 +120,18 @@ static void handle_arg(cmdtemp_t *tmp)
 
 static void exec_command(cmdtemp_t *tmp)
 {
-	if(tmp->pipe_open)
+	if(tmp->prev_pipe_in)
 	{
-		rd_pipe(tmp->pipe_open, &tmp->cmd->fd_in);
-		tmp->pipe_open = 0;
+		rd_pipe(tmp->prev_pipe_in, &tmp->cmd->fd_in);
+		tmp->prev_pipe_in = 0;
+		tmp->cmd->pipe_in_tmp = 0;
 	}
 	if(tmp->cmd->type == pip)
-		tmp->pipe_open = crwr_pipe(&tmp->cmd->fd_out);
-		
+	{
+		crwr_pipe(&tmp->prev_pipe_in, &tmp->cmd->fd_out);
+		tmp->cmd->pipe_in_tmp = tmp->prev_pipe_in;
+	}
+
 	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
 
 	tmp->err = exec(tmp->cmd);
