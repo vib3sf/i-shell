@@ -162,6 +162,8 @@ static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 
 	if (prs->state == quotes)
 		prs->err = quotes_err;
+
+	free(prs);
 }
 
 static int check_errors(parse_err_t err)
