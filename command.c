@@ -72,7 +72,7 @@ static void handle_arg(cmdtemp_t *tmp)
 	{
 		tmp->cmd->type = cd;
 	}
-	else if(!strcmp(tmp->argv[tmp->cur], "&&"))
+	if(!strcmp(tmp->argv[tmp->cur], "&&"))
 	{
 		exec_command(tmp);
 	}
