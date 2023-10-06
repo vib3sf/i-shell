@@ -28,6 +28,7 @@ typedef enum cmd_err
 	exec_err,
 	fork_err,
 	fopen_err,
+	usr_err,
 }
 cmd_err_t;
 

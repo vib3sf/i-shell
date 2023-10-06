@@ -76,6 +76,17 @@ static void handle_arg(cmdtemp_t *tmp)
 	{
 		exec_command(tmp);
 	}
+	else if(!strcmp(tmp->argv[tmp->cur], "||"))
+	{
+		exec_command(tmp);
+		if(tmp->err != no_cmd_err)
+		{
+			check_errors(tmp->err);
+			tmp->err = no_cmd_err;
+		}		
+		else
+			tmp->err = usr_err;
+	}
 	else if(!strcmp(tmp->argv[tmp->cur], "&"))
 	{
 		if(tmp->cmd->type == usual)
