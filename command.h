@@ -17,6 +17,7 @@ typedef struct command
 	int fd_in;
 	int fd_out;
 	int pipe_in_tmp;
+	int pgid;
 }
 command_t;
 

@@ -1,10 +1,14 @@
 #include "command.h"
+
 #include "parse.h"
 #include "exec.h"
 #include <stdio.h>
+#include <signal.h>
 
 int main()
 {
+	signal(SIGTTOU, SIG_IGN);
+
 	change_dir(NULL);	/* cd to home dir */
 	int argc;
     for(;;) 

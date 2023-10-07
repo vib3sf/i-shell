@@ -24,10 +24,8 @@ cmd_err_t exec(command_t *cmd)
 	{
 		case cd:
 			return change_dir(cmd->argv[1]);
-			break;
 		case usual:
 			return exec_usual(cmd);
-			break;
 		case bg: case pip:
 			return exec_bg(cmd);
 	}
@@ -94,7 +92,8 @@ static cmd_err_t exec_usual(command_t *cmd)
 
 	switch_sigchld_status(handle);
 
-	return (WEXITSTATUS(status)) ? exec_err : no_cmd_err;
+	return (WEXITSTATUS(status) || WIFSIGNALED(status)) ? 
+		exec_err : no_cmd_err;
 }
 
 static cmd_err_t exec_bg(command_t *cmd)
@@ -125,9 +124,23 @@ static int cr_fork(command_t *cmd)
 static int exec_argv(command_t *cmd)
 {
 	if(cmd->pipe_in_tmp != 0)
-	{
 		close(cmd->pipe_in_tmp);
+
+	if(cmd->type == usual)
+	{
+		int pid = getpid();
+		if(cmd->pgid != 0)
+		{
+			setpgid(pid, cmd->pgid);
+		}
+		else
+		{
+			setpgid(pid, pid);
+			cmd->pgid = pid;
+			tcsetpgrp(0, pid);
+		}
 	}
+
 	dup_streams(cmd->fd_in, cmd->fd_out);
 	execvp(*cmd->argv, cmd->argv);
 	perror(*cmd->argv);

@@ -3,12 +3,13 @@
 #include "stream.h"
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
 static void argv_to_cmds(cmdtemp_t *tmp);
 static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc);
-static void cmd_init(command_t **cmd);
+static void cmd_init(command_t **cmd, int pgid);
 
 static void exec_command(cmdtemp_t *tmp);
 
@@ -24,10 +25,12 @@ void handle_commands(char **argv, int argc)
 {
 	cmdtemp_t *tmp;
 	cmdtemp_init(&tmp, argv, argc);
-	cmd_init(&tmp->cmd);
+	cmd_init(&tmp->cmd, 0);
 
 	argv_to_cmds(tmp);
 	check_errors(tmp->err);
+
+	tcsetpgrp(0, getpid());
 
 	free(tmp->cmd);
 	free(tmp);
@@ -46,12 +49,13 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 	(*tmp)->err = no_cmd_err;
 }
 
-static void cmd_init(command_t **cmd)
+static void cmd_init(command_t **cmd, int pgid)
 {
 	*cmd = malloc(sizeof(command_t));
 	(*cmd)->fd_in = 0;
 	(*cmd)->fd_out = 1;
 	(*cmd)->type = usual;
+	(*cmd)->pgid = pgid;
 }
 
 static void argv_to_cmds(cmdtemp_t *tmp)
@@ -147,10 +151,12 @@ static void exec_command(cmdtemp_t *tmp)
 
 	tmp->err = exec(tmp->cmd);
 
+	int pgid_tmp = tmp->cmd->pgid;
+
 	tmp->start = tmp->cur + 1;
 	tmp->end = tmp->cur;
 	free_cmd(tmp->cmd);
-	cmd_init(&tmp->cmd);
+	cmd_init(&tmp->cmd, pgid_tmp);
 }
 
 static void array_from_to(char **from, char ***to, int start, int end)
