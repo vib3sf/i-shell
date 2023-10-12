@@ -56,6 +56,7 @@ static void cmd_init(command_t **cmd, int pgid)
 	(*cmd)->fd_out = 1;
 	(*cmd)->type = usual;
 	(*cmd)->pgid = pgid;
+	(*cmd)->pipe_in_tmp = 0;
 }
 
 static void argv_to_cmds(cmdtemp_t *tmp)

@@ -97,7 +97,7 @@ static void handle_space(parse_t *prs)
 		extend_buf(prs);
 		return;
 	}
-	else if(*(prs->buf)) 
+	else if(*prs->buf) 
 	{
 		add_argv(prs);
 		empty_buf(prs);
