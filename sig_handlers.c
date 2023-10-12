@@ -11,6 +11,7 @@ void switch_sigchld_status(sigchld_status_t st)
 	{
 		case ignore:
 			signal(SIGCHLD, SIG_DFL);
+			return;
 		case handle:
 			signal(SIGCHLD, handle_kill_bg);
 	}

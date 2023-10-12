@@ -78,17 +78,16 @@ static char *get_home_dir()
 static cmd_err_t exec_usual(command_t *cmd)
 {
 	switch_sigchld_status(ignore);
+
 	int pid = cr_fork(cmd);
 	
-	if(pid == -1){
-		perror("fork");
+	if(pid == -1)
 		return fork_err;
-	}
 
 	int wr, status;
 	do 
-		wr = waitpid(pid, &status, WNOHANG);
-	while(!wr);
+		wr = wait(&status);
+	while(wr != pid);
 
 	switch_sigchld_status(handle);
 

@@ -1,13 +1,15 @@
 #include "command.h"
-
 #include "parse.h"
 #include "exec.h"
+#include "sig_handlers.h"
+
 #include <stdio.h>
 #include <signal.h>
 
 int main()
 {
 	signal(SIGTTOU, SIG_IGN);
+	switch_sigchld_status(handle);
 
 	change_dir(NULL);	/* cd to home dir */
 	int argc;
