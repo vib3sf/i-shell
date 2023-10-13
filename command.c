@@ -45,15 +45,15 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 	(*tmp)->end = 0;
 	(*tmp)->cur = 0;
 	(*tmp)->count = 0;
-	(*tmp)->prev_pipe_in = 0;
+	(*tmp)->prev_rdpipe = 0;
 	(*tmp)->err = no_cmd_err;
 }
 
 static void cmd_init(command_t **cmd, int pgid)
 {
 	*cmd = malloc(sizeof(command_t));
-	(*cmd)->fd_in = 0;
-	(*cmd)->fd_out = 1;
+	(*cmd)->rdfd = 0;
+	(*cmd)->wrfd = 1;
 	(*cmd)->type = usual;
 	(*cmd)->pgid = pgid;
 	(*cmd)->pipe_in_tmp = 0;
@@ -136,16 +136,16 @@ static void handle_arg(cmdtemp_t *tmp)
 
 static void exec_command(cmdtemp_t *tmp)
 {
-	if(tmp->prev_pipe_in)
+	if(tmp->prev_rdpipe)
 	{
-		rd_pipe(tmp->prev_pipe_in, &tmp->cmd->fd_in);
-		tmp->prev_pipe_in = 0;
+		rd_pipe(tmp->prev_rdpipe, &tmp->cmd->rdfd);
+		tmp->prev_rdpipe = 0;
 		tmp->cmd->pipe_in_tmp = 0;
 	}
 	if(tmp->cmd->type == pip)
 	{
-		crwr_pipe(&tmp->prev_pipe_in, &tmp->cmd->fd_out);
-		tmp->cmd->pipe_in_tmp = tmp->prev_pipe_in;
+		crwr_pipe(&tmp->prev_rdpipe, &tmp->cmd->wrfd);
+		tmp->cmd->pipe_in_tmp = tmp->prev_rdpipe;
 	}
 
 	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
@@ -173,7 +173,7 @@ static void array_from_to(char **from, char ***to, int start, int end)
 
 static void change_stream(cmdtemp_t *tmp, stream_t stream)
 {
-	int *fd = (stream == in) ? &tmp->cmd->fd_in : &tmp->cmd->fd_out;
+	int *fd = (stream == in) ? &tmp->cmd->rdfd : &tmp->cmd->wrfd;
 
 	*fd = change_fd(tmp->argv[tmp->cur + 1], 
 			stream, *fd);

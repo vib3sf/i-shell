@@ -10,10 +10,10 @@ typedef enum stream
 stream_t;
 
 int change_fd(char *name, stream_t stream, int old_fd);
-void dup_streams(int fd_in, int fd_out);
-void close_streams(int *fd_in, int *fd_out);
+void dup_streams(int rdfd, int wrfd);
+void close_streams(int *rdfd, int *wrfd);
 
-void crwr_pipe(int *fd_in, int *fd_out);
-void rd_pipe(int pipe_in, int *fd_in);
+void crwr_pipe(int *rdfd, int *wrfd);
+void rd_pipe(int rdpipe, int *rdfd);
 
 #endif
