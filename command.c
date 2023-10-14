@@ -30,7 +30,7 @@ void handle_commands(char **argv, int argc)
 	argv_to_cmds(tmp);
 	check_errors(tmp->err);
 
-	tcsetpgrp(0, getpid());
+	tcsetpgrp(0, getpid());		/* returns controlling terminal after exec */
 
 	free(tmp->cmd);
 	free(tmp);

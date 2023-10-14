@@ -13,7 +13,7 @@
 static cmd_err_t exec_bg(command_t *cmd);
 static cmd_err_t exec_usual(command_t *cmd);
 
-static int exec_argv(command_t *cmd);
+static void exec_cmd(command_t *cmd);
 static int cr_fork(command_t *cmd);
 static char *expand_home_dir(char *path);
 static char *get_home_dir();
@@ -74,7 +74,6 @@ static char *get_home_dir()
 	return getpwuid(getuid())->pw_dir;
 }
 
-
 static cmd_err_t exec_usual(command_t *cmd)
 {
 	switch_sigchld_status(ignore);
@@ -113,7 +112,7 @@ static int cr_fork(command_t *cmd)
 	}
 
 	if(pid == 0) 
-		exec_argv(cmd);
+		exec_cmd(cmd);
 
 	close_streams(&cmd->rdfd, &cmd->wrfd);
 
@@ -122,22 +121,19 @@ static int cr_fork(command_t *cmd)
 	return pid;
 }
 
-static int exec_argv(command_t *cmd)
+static void exec_cmd(command_t *cmd)
 {
 	if(cmd->pipe_in_tmp != 0)
 		close(cmd->pipe_in_tmp);
 
-	if(cmd->type == usual)
-	{
-		int pid = getpid();
-		if(cmd->pgid == 0)
-		{
-			setpgid(pid, pid);
-			tcsetpgrp(0, pid);
-		}
-		else
-			setpgid(pid, cmd->pgid);
+	int pid = getpid();
+	if(cmd->pgid == 0)			/* creates new group of processes */
+	{							/* where first proc is leader */
+		setpgid(pid, pid);  
+		tcsetpgrp(0, pid);
 	}
+	else
+		setpgid(pid, cmd->pgid);
 
 	dup_streams(cmd->rdfd, cmd->wrfd);
 	execvp(*cmd->argv, cmd->argv);
