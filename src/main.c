@@ -1,7 +1,7 @@
 #include "command.h"
 #include "parse.h"
 #include "exec.h"
-#include "sig_handlers.h"
+#include "sig.h"
 
 #include <stdio.h>
 #include <signal.h>

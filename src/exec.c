@@ -1,7 +1,7 @@
 #include "exec.h"
 #include "command.h"
 #include "stream.h"
-#include "sig_handlers.h"
+#include "sig.h"
 
 #include <unistd.h>
 #include <stdlib.h>

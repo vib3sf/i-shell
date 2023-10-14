@@ -1,4 +1,4 @@
-#include "sig_handlers.h"
+#include "sig.h"
 
 #include <signal.h>
 #include <wait.h>
