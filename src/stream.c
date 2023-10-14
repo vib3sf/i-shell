@@ -9,7 +9,7 @@ static int get_mode(stream_t stream);
 int change_fd(char *name, stream_t stream, int old_fd)
 {
 	int mode = get_mode(stream);
-		if(old_fd != 0 && old_fd != 1)
+	if(old_fd != 0 && old_fd != 1)
 		close(old_fd);
 
 	int fd = open(name, mode, 0666);
