@@ -24,5 +24,5 @@ deps.mk: $(SRC)
 	$(CC) -MM $^ > $@
 
 clean:
-	rm -f $(TARGET) $(BINPREFIX)*.o
+	rm -rf $(TARGET) $(BINPREFIX)
 
