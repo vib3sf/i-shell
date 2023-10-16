@@ -6,6 +6,10 @@
 
 static int get_mode(stream_t stream);
 
+static void fd_iter(int fd[], void (*fptr)(int *, int));
+static void dup_stream(int *fd, int i);
+static void close_stream(int *fd, int i);
+
 int change_fd(char *name, stream_t stream, int old_fd)
 {
 	int mode = get_mode(stream);
@@ -33,28 +37,36 @@ static int get_mode(stream_t stream)
 	}
 }
 
-void dup_streams(const int fd[])
+void dup_nostd_streams(int fd[])
+{
+	fd_iter(fd, dup_stream);
+}
+
+void close_nostd_streams(int fd[])
+{
+	fd_iter(fd, close_stream);
+}
+
+static void fd_iter(int fd[], void (*fptr)(int *, int))
 {
 	for(int i = 0; i < 2; i++)
 	{
 		if(fd[i] != i)
-		{
-			dup2(fd[i], i);
-			close(fd[i]);
-		}
+			fptr(fd + i, i);
 	}
 }
 
-void close_streams(int fd[])
+static void dup_stream(int *fd, int i)
 {
-	for(int i = 0; i < 2; i++)
-	{
-		if(fd[i] != i)
-		{
-			close(fd[i]);
-			fd[i] = i;
-		}
-	}
+	dup2(*fd, i);
+	close(*fd);
+}
+
+
+static void close_stream(int *fd, int i)
+{
+	close(*fd);
+	*fd = i;
 }
 
 void crwr_pipe(int *tmp_rdfd, int *wrfd)
