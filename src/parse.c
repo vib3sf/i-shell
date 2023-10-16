@@ -168,17 +168,21 @@ static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 
 static int check_errors(parse_err_t err)
 {
+	int res;
 	switch(err)
 	{
 		case no_err:
-			return 0;
+			res = 0;
+			break;
 		case quotes_err:
 			printf("err: unmatched quotes.\n");
-			return 1;
+			res = 1;
+			break;
 		case special_char_err:
 			printf("err: invalid combination of special chars.\n");
-			return 2;
+			res = 2;
 	}
+	return res;
 }
 
 static void add_argv(parse_t *prs)

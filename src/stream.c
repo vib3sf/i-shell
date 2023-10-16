@@ -26,15 +26,19 @@ int change_fd(char *name, stream_t stream, int old_fd)
 
 static int get_mode(stream_t stream)
 {
+	int mode;
 	switch(stream)
 	{
 		case in:
-			return O_RDONLY|O_CREAT;
+			mode = O_RDONLY|O_CREAT;
+			break;
 		case out:
-			return O_WRONLY|O_CREAT|O_TRUNC;
+			mode = O_WRONLY|O_CREAT|O_TRUNC;
+			break;
 		case append:
-			return O_WRONLY|O_CREAT|O_APPEND;
+			mode = O_WRONLY|O_CREAT|O_APPEND;
 	}
+	return mode;
 }
 
 void dup_nostd_streams(int fd[])

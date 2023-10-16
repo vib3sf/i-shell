@@ -20,15 +20,19 @@ static char *get_home_dir();
 
 cmd_err_t exec(command_t *cmd)
 {
+	cmd_err_t err;
 	switch(cmd->type)
 	{
 		case cd:
-			return change_dir(cmd->argv[1]);
+			err = change_dir(cmd->argv[1]);
+			break;
 		case usual:
-			return exec_usual(cmd);
+			err = exec_usual(cmd);
+			break;
 		case bg: case pip:
-			return exec_bg(cmd);
+			err = exec_bg(cmd);
 	}
+	return err;
 }
 
 cmd_err_t change_dir(char *path)
