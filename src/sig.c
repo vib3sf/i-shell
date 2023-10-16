@@ -20,4 +20,5 @@ void switch_sigchld_status(sigchld_status_t st)
 void handle_kill_bg(int s)
 {
 	waitpid(-1, NULL, WNOHANG);
+	tcsetpgrp(0, getpid());		/* returns controlling terminal after exec */
 }
