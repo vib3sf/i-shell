@@ -14,8 +14,7 @@ typedef struct command
 {
 	char **argv;
 	cmdtype_t type;
-	int rdfd;
-	int wrfd;
+	int fd[2];
 	int pipe_in_tmp;
 	int pgid;
 }

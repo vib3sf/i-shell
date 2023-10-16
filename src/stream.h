@@ -9,11 +9,13 @@ typedef enum stream
 }
 stream_t;
 
+/* for working with stream redirections */
 int change_fd(char *name, stream_t stream, int old_fd);
-void dup_streams(int rdfd, int wrfd);
-void close_streams(int *rdfd, int *wrfd);
+void dup_streams(const int fd[]);
+void close_streams(int fd[]);
 
-void crwr_pipe(int *rdfd, int *wrfd);
+/* for working with pipes */
+void crwr_pipe(int *tmp_rdfd, int *wrfd);
 void rd_pipe(int rdpipe, int *rdfd);
 
 #endif

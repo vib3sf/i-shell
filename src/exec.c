@@ -114,7 +114,7 @@ static int cr_fork(command_t *cmd)
 	if(pid == 0) 
 		exec_cmd(cmd);
 
-	close_streams(&cmd->rdfd, &cmd->wrfd);
+	close_streams(cmd->fd);
 
 	cmd->pgid = pid;
 
@@ -135,7 +135,7 @@ static void exec_cmd(command_t *cmd)
 	else
 		setpgid(pid, cmd->pgid);
 
-	dup_streams(cmd->rdfd, cmd->wrfd);
+	dup_streams(cmd->fd);
 	execvp(*cmd->argv, cmd->argv);
 	perror(*cmd->argv);
 	_exit(1);

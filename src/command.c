@@ -52,8 +52,8 @@ static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
 static void cmd_init(command_t **cmd, int pgid)
 {
 	*cmd = malloc(sizeof(command_t));
-	(*cmd)->rdfd = 0;
-	(*cmd)->wrfd = 1;
+	(*cmd)->fd[0] = 0;
+	(*cmd)->fd[1] = 1;
 	(*cmd)->type = usual;
 	(*cmd)->pgid = pgid;
 	(*cmd)->pipe_in_tmp = 0;
@@ -138,13 +138,13 @@ static void exec_command(cmdtemp_t *tmp)
 {
 	if(tmp->prev_rdpipe)
 	{
-		rd_pipe(tmp->prev_rdpipe, &tmp->cmd->rdfd);
+		rd_pipe(tmp->prev_rdpipe, &tmp->cmd->fd[0]);
 		tmp->prev_rdpipe = 0;
 		tmp->cmd->pipe_in_tmp = 0;
 	}
 	if(tmp->cmd->type == pip)
 	{
-		crwr_pipe(&tmp->prev_rdpipe, &tmp->cmd->wrfd);
+		crwr_pipe(&tmp->prev_rdpipe, &tmp->cmd->fd[1]);
 		tmp->cmd->pipe_in_tmp = tmp->prev_rdpipe;
 	}
 
@@ -173,10 +173,9 @@ static void array_from_to(char **from, char ***to, int start, int end)
 
 static void change_stream(cmdtemp_t *tmp, stream_t stream)
 {
-	int *fd = (stream == in) ? &tmp->cmd->rdfd : &tmp->cmd->wrfd;
+	int *fd = (stream == in) ? &tmp->cmd->fd[0] : &tmp->cmd->fd[1];
 
-	*fd = change_fd(tmp->argv[tmp->cur + 1], 
-			stream, *fd);
+	*fd = change_fd(tmp->argv[tmp->cur + 1], stream, *fd);
 
 	if(*fd == -1)
 		tmp->err = fopen_err;
