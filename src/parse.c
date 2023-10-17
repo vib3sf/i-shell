@@ -1,4 +1,5 @@
 #include "parse.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,7 @@ static void handle_slash(parse_t *prs);
 static void handle_space(parse_t *prs);
 static void handle_quote(parse_t *prs);
 static void handle_special_char(parse_t *prs);
+static int special_is_not_valid(parse_t *prs);
 static void handle_normal_char(parse_t *prs);
 
 /* adds last arg value and cleans memory */
@@ -124,14 +126,19 @@ static void handle_special_char(parse_t *prs)
 	}
 
 	/* special args may have max 2 chars and chars as &, | and > */
-	if((prs->state == special && 
-			!((prs->c == '&' || prs->c == '|' || prs->c == '>') && prs->c == prs->buf[0])) ||
-			strlen(prs->buf) > 1) 
+	if(special_is_not_valid(prs))
 		prs->err = special_char_err;
 
 	prs->state = special;
 	extend_buf(prs);
 
+}
+
+static int special_is_not_valid(parse_t *prs)
+{
+	return prs->state == special && 
+		(prs->c == prs->buf[0] || strlen(prs->buf) > 1) &&
+		!((prs->c == '&' || prs->c == '|' || prs->c == '>'));
 }
 
 static void handle_normal_char(parse_t *prs)
