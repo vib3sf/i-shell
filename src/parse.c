@@ -25,7 +25,6 @@ static void handle_normal_char(parse_t *prs);
 
 /* adds last arg value and cleans memory */
 static void finish_parse(parse_t *prs, char ***argv_buf, int *argc);
-static int check_errors(parse_err_t err);
 
 #define START_BUF_SIZE 4;
 
@@ -36,13 +35,13 @@ int parse_command(char ***argv_buf, int *argc)
 	
     while((prs->c = getchar()) != '\n')
 	{
-		if(prs->err != no_err)
+		if(prs->res != no_err)
 			break;
 		handle_char(prs);
 	}
 
     finish_parse(prs, argv_buf, argc);
-	return check_errors(prs->err);
+	return prs->res;
 }
 
 static void parse_init(parse_t **prs)
@@ -55,7 +54,7 @@ static void parse_init(parse_t **prs)
 	(*prs)->state = normal;
 	(*prs)->argc = 0;
 	(*prs)->argv = NULL;
-	(*prs)->err = no_err;
+	(*prs)->res = no_err;
 }
 
 static void handle_char(parse_t *prs)
@@ -127,7 +126,7 @@ static void handle_special_char(parse_t *prs)
 
 	/* special args may have max 2 chars and chars as &, | and > */
 	if(special_is_not_valid(prs))
-		prs->err = special_char_err;
+		prs->res = special_char_err;
 
 	prs->state = special;
 	extend_buf(prs);
@@ -157,7 +156,7 @@ static void handle_normal_char(parse_t *prs)
 
 static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 {
-	if(prs->state != space)
+	if(prs->state != space && *prs->buf)
 	{
         add_argv(prs);
 	}
@@ -168,28 +167,11 @@ static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 	*argv_buf = prs->argv;
 
 	if (prs->state == quotes)
-		prs->err = quotes_err;
+		prs->res = quotes_err;
+	else if(prs->argc == 0)
+		prs->res = empty_cmd;
 
 	free(prs);
-}
-
-static int check_errors(parse_err_t err)
-{
-	int res;
-	switch(err)
-	{
-		case no_err:
-			res = 0;
-			break;
-		case quotes_err:
-			printf("err: unmatched quotes.\n");
-			res = 1;
-			break;
-		case special_char_err:
-			printf("err: invalid combination of special chars.\n");
-			res = 2;
-	}
-	return res;
 }
 
 static void add_argv(parse_t *prs)

@@ -8,13 +8,14 @@
  * Space is space :)
  */
 
-typedef enum parse_err
+typedef enum parse_res
 {
 	quotes_err,
 	special_char_err,
 	no_err,
+	empty_cmd,
 }
-parse_err_t;
+parse_res_t;
 
 typedef enum char_state 
 {
@@ -33,7 +34,7 @@ typedef struct parse
 	int buf_count;
 	char **argv;
 	int argc;
-	parse_err_t err;
+	parse_res_t res;
 } parse_t;
 
 
