@@ -1,6 +1,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include "parse.h"
+
 typedef enum cmdtype
 {
 	usual,
@@ -35,7 +37,7 @@ cmd_err_t;
 typedef struct cmdtemp
 {
 	command_t *cmd;
-	char **argv;
+	argument_t *argv;
 	int argc;
 	int start;
 	int end;
@@ -46,6 +48,6 @@ typedef struct cmdtemp
 }
 cmdtemp_t;
 
-void handle_commands(char **argv, int argc);
+void handle_commands(argument_t *argv, int argc);
 
 #endif

@@ -1,6 +1,7 @@
 #include "command.h"
 #include "exec.h"
 #include "stream.h"
+#include "parse.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -8,20 +9,25 @@
 #include <string.h>
 
 static void argv_to_cmds(cmdtemp_t *tmp);
-static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc);
+static void cmdtemp_init(cmdtemp_t **tmp, argument_t *argv, int argc);
 static void cmd_init(command_t **cmd, int pgid);
 
 static void exec_command(cmdtemp_t *tmp);
 
 static void handle_arg(cmdtemp_t *tmp);
-static void array_from_to(char **from, char ***to, int start, int end);
+static void handle_word_arg(cmdtemp_t *tmp);
+static void handle_logical_arg(cmdtemp_t *tmp);
+static void handle_bg_arg(cmdtemp_t *tmp);
+static void handle_stream_arg(cmdtemp_t *tmp);
+
+static void array_from_to(argument_t *from, char ***to, int start, int end);
 static void free_cmd(command_t *cmd);
 
 static void change_stream(cmdtemp_t *tmp, stream_t stream);
 
 static void check_errors(cmd_err_t err);
 
-void handle_commands(char **argv, int argc)
+void handle_commands(argument_t *argv, int argc)
 {
 	cmdtemp_t *tmp;
 	cmdtemp_init(&tmp, argv, argc);
@@ -36,7 +42,7 @@ void handle_commands(char **argv, int argc)
 	free(tmp);
 }
 
-static void cmdtemp_init(cmdtemp_t **tmp, char **argv, int argc)
+static void cmdtemp_init(cmdtemp_t **tmp, argument_t *argv, int argc)
 {
 	*tmp = malloc(sizeof(cmdtemp_t));
 	(*tmp)->argv = argv;
@@ -73,38 +79,29 @@ static void argv_to_cmds(cmdtemp_t *tmp)
 
 static void handle_arg(cmdtemp_t *tmp)
 {
-	if(tmp->start == tmp->end && !strcmp(tmp->argv[tmp->cur], "cd"))
+	switch(tmp->argv[tmp->cur].type)
+	{
+		case word_arg:
+			handle_word_arg(tmp);
+			break;
+		case logical_and_arg: case logical_or_arg:
+			handle_logical_arg(tmp);
+			break;
+		case bg_arg: case pipe_arg:
+			handle_bg_arg(tmp);
+			break;
+		case in_arg: case out_arg: case append_arg:
+			handle_stream_arg(tmp);
+			return;
+	}
+	tmp->end++;
+}
+
+static void handle_word_arg(cmdtemp_t *tmp)
+{
+	if(tmp->start == tmp->end && !strcmp(tmp->argv[tmp->cur].s, "cd"))
 	{
 		tmp->cmd->type = cd;
-	}
-	if(!strcmp(tmp->argv[tmp->cur], "&&"))
-	{
-		exec_command(tmp);
-	}
-	else if(!strcmp(tmp->argv[tmp->cur], "||"))
-	{
-		exec_command(tmp);
-		if(tmp->err != no_cmd_err)
-		{
-			check_errors(tmp->err);
-			tmp->err = no_cmd_err;
-		}		
-		else
-			tmp->err = usr_err;
-	}
-	else if(!strcmp(tmp->argv[tmp->cur], "&"))
-	{
-		if(tmp->cmd->type == usual)
-			tmp->cmd->type = bg;
-
-		exec_command(tmp);
-	}
-	else if(!strcmp(tmp->argv[tmp->cur], "|"))
-	{
-		if(tmp->cmd->type == usual)
-			tmp->cmd->type = pip;
-
-		exec_command(tmp);
 	}
 	else if(tmp->cmd->type == cd && tmp->cur - tmp->start > 1)
 	{
@@ -115,23 +112,44 @@ static void handle_arg(cmdtemp_t *tmp)
 		tmp->end++;
 		exec_command(tmp);
 	}
-	else if(!strcmp(tmp->argv[tmp->cur], "<"))
-	{
-		change_stream(tmp, in);
-		return;
-	}
-	else if(!strcmp(tmp->argv[tmp->cur], ">"))
-	{
-		change_stream(tmp, out);
-		return;
-	}
-	else if(!strcmp(tmp->argv[tmp->cur], ">>"))
-	{
-		change_stream(tmp, append);
-		return;
-	}
+}
 
-	tmp->end++;
+static void handle_logical_arg(cmdtemp_t *tmp)
+{
+	if(tmp->argv[tmp->cur].type == logical_and_arg)
+		exec_command(tmp);
+	else if(tmp->argv[tmp->cur].type == logical_or_arg)
+	{
+		exec_command(tmp);
+		if(tmp->err != no_cmd_err)
+		{
+			check_errors(tmp->err);
+			tmp->err = no_cmd_err;
+		}		
+		else
+			tmp->err = usr_err;
+	}
+}
+
+static void handle_bg_arg(cmdtemp_t *tmp)
+{
+	if(tmp->cmd->type == usual)
+		tmp->cmd->type = (tmp->argv[tmp->cur].type == bg_arg) ? bg : pip;
+
+	exec_command(tmp);
+}
+
+static void handle_stream_arg(cmdtemp_t *tmp)
+{
+	stream_t s;
+	if(tmp->argv[tmp->cur].type == in_arg)
+		s = in;
+	else if(tmp->argv[tmp->cur].type == out_arg)
+		s = out;
+	else if(tmp->argv[tmp->cur].type == append_arg)
+		s = append;
+
+	change_stream(tmp, s);
 }
 
 static void exec_command(cmdtemp_t *tmp)
@@ -160,13 +178,13 @@ static void exec_command(cmdtemp_t *tmp)
 	cmd_init(&tmp->cmd, pgid_tmp);
 }
 
-static void array_from_to(char **from, char ***to, int start, int end)
+static void array_from_to(argument_t *from, char ***to, int start, int end)
 {
 	int size = end - start;
 	*to = malloc((size + 1) * sizeof(char*));
 
 	for(int i = 0; i < size; i++)
-		(*to)[i] = from[start + i];
+		(*to)[i] = from[start + i].s;
 	
 	(*to)[size] = NULL;
 }
@@ -175,7 +193,7 @@ static void change_stream(cmdtemp_t *tmp, stream_t stream)
 {
 	int *fd = (stream == in) ? &tmp->cmd->fd[0] : &tmp->cmd->fd[1];
 
-	*fd = change_fd(tmp->argv[tmp->cur + 1], stream, *fd);
+	*fd = change_fd(tmp->argv[tmp->cur + 1].s, stream, *fd);
 
 	if(*fd == -1)
 		tmp->err = fopen_err;

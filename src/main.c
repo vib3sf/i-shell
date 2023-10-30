@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <signal.h>
 
-static void handle_parse_result(parse_res_t res, char **argv_buf, int argc);
+static void handle_parse_result(parse_res_t res, argument_t *argv_buf, int argc);
 
 int main()
 {
@@ -15,7 +15,7 @@ int main()
 
 	change_dir(NULL);	/* cd to home dir */
 
-	char **argv_buf;
+	argument_t *argv_buf;
 	int argc;
     for(;;) 
 	{
@@ -35,7 +35,7 @@ int main()
 }
 
 
-static void handle_parse_result(parse_res_t res, char **argv_buf, int argc)
+static void handle_parse_result(parse_res_t res, argument_t *argv_buf, int argc)
 {
 	switch(res)
 	{

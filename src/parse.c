@@ -12,6 +12,9 @@ static void add_argv(parse_t *prs);
 static void empty_buf(parse_t *prs);
 static void extend_buf(parse_t *prs);
 
+static arg_type_t get_arg_type(parse_t *prs);
+static arg_type_t get_special_arg_type(parse_t *prs);
+
 /* handlers controller */
 static void handle_char(parse_t *prs);
 
@@ -24,11 +27,11 @@ static int special_is_not_valid(parse_t *prs);
 static void handle_normal_char(parse_t *prs);
 
 /* adds last arg value and cleans memory */
-static void finish_parse(parse_t *prs, char ***argv_buf, int *argc);
+static void finish_parse(parse_t *prs, argument_t **argv_buf, int *argc);
 
 #define START_BUF_SIZE 4;
 
-int parse_command(char ***argv_buf, int *argc)
+int parse_command(argument_t **argv_buf, int *argc)
 {
 	parse_t *prs;
 	parse_init(&prs);
@@ -76,7 +79,7 @@ static void handle_char(parse_t *prs)
 			handle_quote(prs); 
 			break;
 
-		case '&': case '|': case '>': case '<': case ';': case '(': case ')':
+		case '&': case '|': case '>': case '<': 
 			handle_special_char(prs);
 			break;
 
@@ -154,7 +157,7 @@ static void handle_normal_char(parse_t *prs)
 	extend_buf(prs);
 }
 
-static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
+static void finish_parse(parse_t *prs, argument_t **argv_buf, int *argc)
 {
 	if(prs->state != space && *prs->buf)
 	{
@@ -176,13 +179,50 @@ static void finish_parse(parse_t *prs, char ***argv_buf, int *argc)
 
 static void add_argv(parse_t *prs)
 {
-    prs->argv = realloc(prs->argv, (prs->argc + 1) * sizeof(char *));
+    prs->argv = realloc(prs->argv, (prs->argc + 1) * sizeof(argument_t));
 
-    char **p = &(prs->argv)[prs->argc];	/* The great mystery of humanity */
+    char **p = &(prs->argv)[prs->argc].s;	/* The great mystery of humanity */
     *p = malloc(prs->buf_size * sizeof(char));
     strcpy(*p, prs->buf);
 
+	prs->argv[prs->argc].type = get_arg_type(prs);
+
     prs->argc++;
+}
+
+static arg_type_t get_arg_type(parse_t *prs)
+{
+	arg_type_t res;
+	switch(prs->state)
+	{
+		case special:
+			res = get_special_arg_type(prs);
+			break;
+		case normal: case quotes: case space:
+			res = word_arg;
+	}
+	return res;
+}
+
+static arg_type_t get_special_arg_type(parse_t *prs)
+{
+	arg_type_t res;
+	switch(prs->buf[0])
+	{
+		case '&':
+			res = (strlen(prs->buf) == 2) ? logical_and_arg : bg_arg;
+			break;
+		case '|':
+			res = (strlen(prs->buf) == 2) ? logical_or_arg : pipe_arg;
+			break;
+		case '>':
+			res = (strlen(prs->buf) == 2) ? append_arg : out_arg;
+			break;
+		case '<':
+			res = in_arg;
+			break;
+	}
+	return res;
 }
 
 static void empty_buf(parse_t *prs)
@@ -206,10 +246,10 @@ static void extend_buf(parse_t *prs)
 	prs->buf_count++;
 }
 
-void free_argv(char **argv, int argc)
+void free_argv(argument_t *argv, int argc)
 {
     for(int i = 0; i < argc; i++)
-        free(argv[i]);
+        free(argv[i].s);
     free(argv);
 }
 
