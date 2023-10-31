@@ -74,7 +74,7 @@ typedef struct parse
 } 
 parse_t;
 
-int parse_command(argument_t **argv_buf, int *argc);
+parse_res_t parse_command(argument_t **argv_buf, int *argc);
 void free_argv(argument_t *argv, int argc);
 
 #endif

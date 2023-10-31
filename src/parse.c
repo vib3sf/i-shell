@@ -31,7 +31,7 @@ static void finish_parse(parse_t *prs, argument_t **argv_buf, int *argc);
 
 #define START_BUF_SIZE 4;
 
-int parse_command(argument_t **argv_buf, int *argc)
+parse_res_t parse_command(argument_t **argv_buf, int *argc)
 {
 	parse_t *prs;
 	parse_init(&prs);
