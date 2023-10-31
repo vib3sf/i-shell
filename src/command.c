@@ -1,7 +1,6 @@
 #include "command.h"
 #include "exec.h"
 #include "stream.h"
-#include "parse.h"
 
 #include <stdio.h>
 #include <unistd.h>
