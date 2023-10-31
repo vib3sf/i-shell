@@ -142,7 +142,6 @@ static void exec_cmd(command_t *cmd)
 	dup_nostd_streams(cmd->fd);
 	execvp(*cmd->argv, cmd->argv);
 	perror(*cmd->argv);
-	_exit(1);
+	exit(1);
 }
-
 
