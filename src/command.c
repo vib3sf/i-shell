@@ -203,8 +203,6 @@ static void check_errors(cmd_err_t err)
 {
 	switch(err)
 	{
-		case no_cmd_err:
-			return;
 		case cd_many_args_err:
 			printf("cd can have maximum one argument.\n");
 			return;
