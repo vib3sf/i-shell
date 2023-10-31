@@ -116,11 +116,9 @@ static void handle_word_arg(cmdtemp_t *tmp)
 
 static void handle_logical_arg(cmdtemp_t *tmp)
 {
-	if(tmp->argv[tmp->cur].type == logical_and_arg)
-		exec_command(tmp);
-	else if(tmp->argv[tmp->cur].type == logical_or_arg)
+	exec_command(tmp);
+	if(tmp->argv[tmp->cur].type == logical_or_arg)
 	{
-		exec_command(tmp);
 		if(tmp->err != no_cmd_err)
 		{
 			check_errors(tmp->err);
