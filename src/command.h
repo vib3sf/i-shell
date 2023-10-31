@@ -14,10 +14,17 @@ cmdtype_t;
 
 typedef struct command
 {
+	/* array for execvp */
 	char **argv;
 	cmdtype_t type;
+
+	/* input and output of command */
 	int fd[2];
+
+	/* temp input fd of pipe if it has created in previous command */
 	int pipe_in_tmp;
+
+	/* first proc id that which is leader of group */
 	int pgid;
 }
 command_t;
@@ -37,13 +44,21 @@ cmd_err_t;
 typedef struct cmdtemp
 {
 	command_t *cmd;
+
+	/* result of parsing */
 	argument_t *argv;
 	int argc;
+
+	/* argv border for each command */
 	int start;
 	int end;
+	
+	/* index of handling argument */
 	int cur;
-	int count;
+
+	/* temp input fd of pipe if it has created in previous command */
 	int prev_rdpipe;
+
 	cmd_err_t err;
 }
 cmdtemp_t;

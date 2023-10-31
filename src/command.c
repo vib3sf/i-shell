@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void argv_to_cmds(cmdtemp_t *tmp);
+static void iterate_handling(cmdtemp_t *tmp);
 static void cmdtemp_init(cmdtemp_t **tmp, argument_t *argv, int argc);
 static void cmd_init(command_t **cmd, int pgid);
 
@@ -19,7 +19,7 @@ static void handle_logical_arg(cmdtemp_t *tmp);
 static void handle_bg_arg(cmdtemp_t *tmp);
 static void handle_stream_arg(cmdtemp_t *tmp);
 
-static void array_from_to(argument_t *from, char ***to, int start, int end);
+static char **get_exec_argv(argument_t *from, int start, int end);
 static void free_cmd(command_t *cmd);
 
 static void change_stream(cmdtemp_t *tmp, stream_t stream);
@@ -32,7 +32,7 @@ void handle_commands(argument_t *argv, int argc)
 	cmdtemp_init(&tmp, argv, argc);
 	cmd_init(&tmp->cmd, 0);
 
-	argv_to_cmds(tmp);
+	iterate_handling(tmp);
 	check_errors(tmp->err);
 
 	tcsetpgrp(0, getpid());		/* returns controlling terminal after exec */
@@ -49,7 +49,6 @@ static void cmdtemp_init(cmdtemp_t **tmp, argument_t *argv, int argc)
 	(*tmp)->start = 0;
 	(*tmp)->end = 0;
 	(*tmp)->cur = 0;
-	(*tmp)->count = 0;
 	(*tmp)->prev_rdpipe = 0;
 	(*tmp)->err = no_cmd_err;
 }
@@ -64,7 +63,7 @@ static void cmd_init(command_t **cmd, int pgid)
 	(*cmd)->pipe_in_tmp = 0;
 }
 
-static void argv_to_cmds(cmdtemp_t *tmp)
+static void iterate_handling(cmdtemp_t *tmp)
 {
 	while(tmp->cur < tmp->argc)
 	{
@@ -163,7 +162,7 @@ static void exec_command(cmdtemp_t *tmp)
 		tmp->cmd->pipe_in_tmp = tmp->prev_rdpipe;
 	}
 
-	array_from_to(tmp->argv, &tmp->cmd->argv, tmp->start, tmp->end);
+	tmp->cmd->argv = get_exec_argv(tmp->argv, tmp->start, tmp->end);
 
 	tmp->err = exec(tmp->cmd);
 
@@ -175,15 +174,16 @@ static void exec_command(cmdtemp_t *tmp)
 	cmd_init(&tmp->cmd, pgid_tmp);
 }
 
-static void array_from_to(argument_t *from, char ***to, int start, int end)
+static char **get_exec_argv(argument_t *from, int start, int end)
 {
 	int size = end - start;
-	*to = malloc((size + 1) * sizeof(char*));
+	char **to = malloc((size + 1) * sizeof(char*));
 
 	for(int i = 0; i < size; i++)
-		(*to)[i] = from[start + i].s;
+		to[i] = from[start + i].s;
 	
-	(*to)[size] = NULL;
+	to[size] = NULL;
+	return to;
 }
 
 static void change_stream(cmdtemp_t *tmp, stream_t stream)
