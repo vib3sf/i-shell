@@ -80,14 +80,14 @@ static char *get_home_dir()
 
 static cmd_err_t exec_usual(command_t *cmd)
 {
+	int pid, wr, status;
 	switch_sigchld_status(ignore);
 
-	int pid = cr_fork(cmd);
+	pid = cr_fork(cmd);
 	
 	if(pid == -1)
 		return fork_err;
 
-	int wr, status;
 	do 
 		wr = wait(&status);
 	while(wr != pid);
@@ -127,10 +127,12 @@ static int cr_fork(command_t *cmd)
 
 static void exec_cmd(command_t *cmd)
 {
+	int pid;
+
 	if(cmd->pipe_in_tmp != 0)
 		close(cmd->pipe_in_tmp);
 
-	int pid = getpid();
+	pid = getpid();
 	if(cmd->pgid == 0)			/* creates new group of processes */
 	{							/* where first proc is leader */
 		setpgid(pid, pid);  

@@ -5,7 +5,7 @@ typedef enum stream
 {
 	in,
 	out,
-	append,
+	append
 }
 stream_t;
 

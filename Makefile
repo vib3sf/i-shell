@@ -1,7 +1,7 @@
 TARGET = i-shell
 
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -ansi -pedantic -g
 
 SRCPREFIX = ./src/
 BINPREFIX = ./bin/

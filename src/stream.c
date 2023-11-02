@@ -12,11 +12,11 @@ static void close_stream(int *fd, int i);
 
 int change_fd(char *name, stream_t stream, int old_fd)
 {
-	int mode = get_mode(stream);
+	int fd, mode = get_mode(stream);
 	if(old_fd != 0 && old_fd != 1)
 		close(old_fd);
 
-	int fd = open(name, mode, 0666);
+	fd = open(name, mode, 0666);
 
 	if(fd == -1)
 		perror(name);
@@ -53,7 +53,8 @@ void close_nostd_streams(int fd[])
 
 static void fd_iter(int fd[], void (*fptr)(int *, int))
 {
-	for(int i = 0; i < 2; i++)
+	int i;
+	for(i = 0; i < 2; i++)
 	{
 		if(fd[i] != i)
 			fptr(fd + i, i);

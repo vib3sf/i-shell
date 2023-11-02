@@ -6,17 +6,20 @@
 #include <stdio.h>
 #include <signal.h>
 
-static void handle_parse_result(parse_res_t res, argument_t *argv_buf, int argc);
+static void 
+handle_parse_result(parse_res_t res, argument_t *argv_buf, int argc);
 
 int main()
 {
+	argument_t *argv_buf;
+	int argc;
+	parse_res_t res;
+
 	signal(SIGTTOU, SIG_IGN);
 	switch_sigchld_status(handle);
 
 	change_dir(NULL);	/* cd to home dir */
 
-	argument_t *argv_buf;
-	int argc;
     for(;;) 
 	{
         printf("> ");
@@ -24,7 +27,7 @@ int main()
 		argv_buf = NULL;
 
 		signal(SIGINT, SIG_IGN);	/* ingore while reading the command */
-        parse_res_t res = parse_command(&argv_buf, &argc);
+        res = parse_command(&argv_buf, &argc);
 		signal(SIGINT, SIG_DFL);
 		
 		handle_parse_result(res, argv_buf, argc);

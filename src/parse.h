@@ -19,7 +19,7 @@ typedef enum arg_type
 	/* stream redirectioin args */
 	in_arg,
 	out_arg,
-	append_arg,
+	append_arg
 }
 arg_type_t;
 
@@ -36,7 +36,7 @@ typedef enum parse_res
 	no_err,
 	quotes_err,
 	special_char_err,
-	empty_cmd,
+	empty_cmd
 }
 parse_res_t;
 

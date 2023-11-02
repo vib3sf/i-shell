@@ -150,6 +150,7 @@ static void handle_stream_arg(cmdtemp_t *tmp)
 
 static void exec_command(cmdtemp_t *tmp)
 {
+	int pgid_tmp;
 	if(tmp->prev_rdpipe)
 	{
 		rd_pipe(tmp->prev_rdpipe, &tmp->cmd->fd[0]);
@@ -166,7 +167,7 @@ static void exec_command(cmdtemp_t *tmp)
 
 	tmp->err = exec(tmp->cmd);
 
-	int pgid_tmp = tmp->cmd->pgid;
+	pgid_tmp = tmp->cmd->pgid;
 
 	tmp->start = tmp->cur + 1;
 	tmp->end = tmp->cur;
@@ -179,7 +180,8 @@ static char **get_exec_argv(argument_t *from, int start, int end)
 	int size = end - start;
 	char **to = malloc((size + 1) * sizeof(char*));
 
-	for(int i = 0; i < size; i++)
+	int i;
+	for(i = 0; i < size; i++)
 		to[i] = from[start + i].s;
 	
 	to[size] = NULL;

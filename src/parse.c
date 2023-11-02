@@ -178,12 +178,13 @@ static void finish_parse(parse_t *prs, argument_t **argv_buf, int *argc)
 }
 
 static void add_argv(parse_t *prs)
-{
+{	
+	char **arg;
     prs->argv = realloc(prs->argv, (prs->argc + 1) * sizeof(argument_t));
 
-    char **p = &(prs->argv)[prs->argc].s;	/* The great mystery of humanity */
-    *p = malloc(prs->buf_size * sizeof(char));
-    strcpy(*p, prs->buf);
+    arg = &(prs->argv)[prs->argc].s;	
+    *arg = malloc(prs->buf_size * sizeof(char));
+    strcpy(*arg, prs->buf);
 
 	prs->argv[prs->argc].type = get_arg_type(prs);
 
@@ -248,7 +249,8 @@ static void extend_buf(parse_t *prs)
 
 void free_argv(argument_t *argv, int argc)
 {
-    for(int i = 0; i < argc; i++)
+	int i;
+    for(i = 0; i < argc; i++)
         free(argv[i].s);
     free(argv);
 }
