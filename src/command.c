@@ -142,7 +142,7 @@ static void handle_stream_arg(cmdtemp_t *tmp)
 		s = in;
 	else if(tmp->argv[tmp->cur].type == out_arg)
 		s = out;
-	else if(tmp->argv[tmp->cur].type == append_arg)
+	else 
 		s = append;
 
 	change_stream(tmp, s);

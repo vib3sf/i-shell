@@ -16,7 +16,7 @@ static cmd_err_t exec_usual(command_t *cmd);
 static void exec_cmd(command_t *cmd);
 static int cr_fork(command_t *cmd);
 static char *expand_home_dir(char *path);
-static char *get_home_dir();
+static char *get_home_dir(void);
 
 cmd_err_t exec(command_t *cmd)
 {
@@ -73,7 +73,7 @@ static char *expand_home_dir(char *path)
 	return path_buf;
 }
 
-static char *get_home_dir()
+static char *get_home_dir(void)
 {
 	return getpwuid(getuid())->pw_dir;
 }

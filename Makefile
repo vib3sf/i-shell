@@ -1,6 +1,6 @@
 TARGET = i-shell
 
-CC = gcc
+CC = clang
 CFLAGS = -Wall -ansi -pedantic -g
 
 SRCPREFIX = ./src/

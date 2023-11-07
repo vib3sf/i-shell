@@ -9,7 +9,7 @@
 static void 
 handle_parse_result(parse_res_t res, argument_t *argv_buf, int argc);
 
-int main()
+int main(void)
 {
 	argument_t *argv_buf;
 	int argc;
