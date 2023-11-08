@@ -1,5 +1,6 @@
 #include "parse.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,9 +36,15 @@ parse_res_t parse_command(argument_t **argv_buf, int *argc)
 {
 	parse_t *prs;
 	parse_init(&prs);
-	
+
     while((prs->c = getchar()) != '\n')
 	{
+		if(prs->c == -1 && errno == EINTR)
+		{
+			errno = 0;
+			continue;
+		}
+
 		if(prs->res != no_err)
 			break;
 		handle_char(prs);
