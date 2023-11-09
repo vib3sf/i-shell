@@ -4,7 +4,6 @@
 #include <wait.h>
 #include <unistd.h>
 
-
 void switch_sigchld_status(sigchld_status_t st)
 {
 	switch(st)
@@ -19,6 +18,16 @@ void switch_sigchld_status(sigchld_status_t st)
 
 void handle_kill_bg(int s)
 {
-	waitpid(-1, NULL, WNOHANG);
+	int pid;
+
+	signal(SIGCHLD, handle_kill_bg);
+
+	do 
+	{
+		pid = waitpid(-1, NULL, WNOHANG);
+	} 
+	while(pid > 0);
+
 	tcsetpgrp(0, getpid());		/* returns controlling terminal after exec */
 }
+
